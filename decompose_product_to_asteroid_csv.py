@@ -124,10 +124,35 @@ def find_target_blueprint(product_name: str, name_map: dict[int, str], category_
     raise DecomposeError(f"未在 Product 中找到产物：{product_name}")
 
 
+def collect_asteroid_decompose_outputs(refinery_file: str, category_map: dict[int, str]) -> set[int]:
+    refinery_path = REFINERY_DIR / refinery_file
+    if not refinery_path.exists():
+        raise DecomposeError(f"指定的 Refinery 文件不存在：{refinery_file}")
+
+    asteroid_outputs: set[int] = set()
+    for bp in load_json(refinery_path):
+        inputs = tuple((int(i["typeID"]), int(i.get("quantity", 0))) for i in bp.get("inputs", []) if i.get("typeID") is not None)
+        outputs = tuple((int(o["typeID"]), int(o.get("quantity", 0))) for o in bp.get("outputs", []) if o.get("typeID") is not None)
+        if not inputs or not outputs:
+            continue
+
+        if not any(category_map.get(in_type, "") == "Asteroid" for in_type, _ in inputs):
+            continue
+
+        for out_type, _ in outputs:
+            if category_map.get(out_type, "") != "Asteroid":
+                asteroid_outputs.add(out_type)
+    return asteroid_outputs
+
+
 def load_recipes(refinery_file: str, category_map: dict[int, str]) -> list[Recipe]:
     refinery_path = REFINERY_DIR / refinery_file
     if not refinery_path.exists():
         raise DecomposeError(f"指定的 Refinery 文件不存在：{refinery_file}")
+
+    blocked_printer_inputs: set[int] = set()
+    if refinery_file == "field_refinery.json":
+        blocked_printer_inputs = collect_asteroid_decompose_outputs(refinery_file, category_map)
 
     recipes: list[Recipe] = []
     source_files = [refinery_path, *sorted(PRINTER_DIR.glob("*.json"))]
@@ -136,6 +161,8 @@ def load_recipes(refinery_file: str, category_map: dict[int, str]) -> list[Recip
             inputs = tuple((int(i["typeID"]), int(i.get("quantity", 0))) for i in bp.get("inputs", []) if i.get("typeID") is not None)
             outputs = tuple((int(o["typeID"]), int(o.get("quantity", 0))) for o in bp.get("outputs", []) if o.get("typeID") is not None)
             if not inputs or not outputs:
+                continue
+            if source.parent == PRINTER_DIR and blocked_printer_inputs and any(in_type in blocked_printer_inputs for in_type, _ in inputs):
                 continue
             # 仅保留“向上生产”配方（输出不是 Asteroid），避免与反向分解配方形成环
             if any(category_map.get(out_type, "") == "Asteroid" for out_type, _ in outputs):
