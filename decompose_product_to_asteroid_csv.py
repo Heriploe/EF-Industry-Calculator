@@ -17,6 +17,7 @@ PRODUCT_DIR = ROOT / "Product"
 PRINTER_DIR = ROOT / "Printer"
 REFINERY_DIR = ROOT / "Refinery"
 TYPES_PATH = ROOT / "types.json"
+DEFAULT_INVENTORY_PATH = ROOT / "Inventory" / "inventory.csv"
 
 
 class DecomposeError(RuntimeError):
@@ -64,6 +65,41 @@ def load_types_maps() -> tuple[dict[int, str], dict[int, str]]:
         name_map[normalized] = row.get("name", "")
         category_map[normalized] = row.get("categoryName", "")
     return name_map, category_map
+
+
+def load_inventory(path: Path, name_map: dict[int, str]) -> dict[int, int]:
+    if not path.exists():
+        raise DecomposeError(f"库存文件不存在：{path}")
+
+    name_to_type: dict[str, int] = {}
+    for type_id, name in name_map.items():
+        key = name.strip()
+        if key and key not in name_to_type:
+            name_to_type[key] = type_id
+
+    inventory: dict[int, int] = {}
+    with path.open("r", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        for row in reader:
+            if len(row) < 2:
+                continue
+            item_name = row[0].strip()
+            quantity_text = row[1].strip()
+            if not item_name or not quantity_text:
+                continue
+
+            try:
+                quantity = int(quantity_text)
+            except ValueError:
+                continue
+
+            type_id = name_to_type.get(item_name)
+            if type_id is None:
+                continue
+
+            inventory[type_id] = inventory.get(type_id, 0) + quantity
+
+    return inventory
 
 
 def fill_item_meta(item: dict[str, Any], name_map: dict[int, str], category_map: dict[int, str]) -> dict[str, Any]:
@@ -137,6 +173,7 @@ def choose_next_item(state: dict[int, int], producible_non_asteroid: set[int]) -
 
 def solve_integer_program(
     initial_state: dict[int, int],
+    initial_inventory: dict[int, int],
     recipes: list[Recipe],
     category_map: dict[int, str],
     overproduce_buffer: int,
@@ -149,18 +186,57 @@ def solve_integer_program(
             if category_map.get(type_id, "") != "Asteroid":
                 producible_non_asteroid.add(type_id)
 
+    def consume_inventory_once(state: dict[int, int], inventory: dict[int, int], type_id: int) -> tuple[dict[int, int], dict[int, int]]:
+        demand = state.get(type_id, 0)
+        available = inventory.get(type_id, 0)
+        if demand <= 0 or available <= 0:
+            return state, inventory
+
+        consumed = min(demand, available)
+        next_state = dict(state)
+        next_inventory = dict(inventory)
+        next_state[type_id] = demand - consumed
+        next_inventory[type_id] = available - consumed
+        return next_state, next_inventory
+
+    def consume_terminal_inventory(state: dict[int, int], inventory: dict[int, int]) -> tuple[dict[int, int], dict[int, int]]:
+        next_state = dict(state)
+        next_inventory = dict(inventory)
+        for type_id, demand in list(next_state.items()):
+            if demand <= 0:
+                continue
+            available = next_inventory.get(type_id, 0)
+            if available <= 0:
+                continue
+            consumed = min(demand, available)
+            next_state[type_id] = demand - consumed
+            next_inventory[type_id] = available - consumed
+        return next_state, next_inventory
+
     @lru_cache(maxsize=None)
-    def solve(state_key: tuple[tuple[int, int], ...]) -> tuple[tuple[int, int, int], tuple[BranchChoice, ...], tuple[tuple[int, int], ...]]:
+    def solve(
+        state_key: tuple[tuple[int, int], ...],
+        inventory_key: tuple[tuple[int, int], ...],
+    ) -> tuple[tuple[int, int, int], tuple[BranchChoice, ...], tuple[tuple[int, int], ...], tuple[tuple[int, int], ...]]:
         state = dict(state_key)
+        inventory = dict(inventory_key)
+
         next_item = choose_next_item(state, producible_non_asteroid)
+        if next_item is not None:
+            reduced_state, reduced_inventory = consume_inventory_once(state, inventory, next_item)
+            if reduced_state != state:
+                return solve(state_to_key(reduced_state), state_to_key(reduced_inventory))
+
         if next_item is None:
+            state, inventory = consume_terminal_inventory(state, inventory)
             asteroid_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") == "Asteroid")
             skipped_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") != "Asteroid" and t not in producible_non_asteroid)
-            return (asteroid_total, skipped_total, 0), tuple(), state_key
+            return (asteroid_total, skipped_total, 0), tuple(), state_to_key(state), state_to_key(inventory)
 
         best_obj: tuple[int, int, int] | None = None
         best_plan: tuple[BranchChoice, ...] = tuple()
         best_end_state = state_key
+        best_end_inventory = inventory_key
 
         for recipe_idx in output_to_recipes.get(next_item, []):
             recipe = recipes[recipe_idx]
@@ -174,22 +250,24 @@ def solve_integer_program(
 
             for runs in range(min_runs, max_runs + 1):
                 child_state = apply_choice(state, recipe, runs)
-                child_obj, child_plan, child_end_state = solve(state_to_key(child_state))
+                child_obj, child_plan, child_end_state, child_end_inventory = solve(state_to_key(child_state), state_to_key(inventory))
                 current_obj = (child_obj[0], child_obj[1], child_obj[2] + runs)
                 if best_obj is None or current_obj < best_obj:
                     best_obj = current_obj
                     best_plan = (BranchChoice(recipe_idx, runs),) + child_plan
                     best_end_state = child_end_state
+                    best_end_inventory = child_end_inventory
 
         if best_obj is None:
             # 无可用配方，强制结束（该物料会在终态按 skipped 统计）
+            state, inventory = consume_terminal_inventory(state, inventory)
             asteroid_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") == "Asteroid")
             skipped_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") != "Asteroid" and t not in producible_non_asteroid)
-            return (asteroid_total, skipped_total, 0), tuple(), state_key
+            return (asteroid_total, skipped_total, 0), tuple(), state_to_key(state), state_to_key(inventory)
 
-        return best_obj, best_plan, best_end_state
+        return best_obj, best_plan, best_end_state, best_end_inventory
 
-    _, best_plan, end_state_key = solve(state_to_key(initial_state))
+    _, best_plan, end_state_key, _ = solve(state_to_key(initial_state), state_to_key(initial_inventory))
     return dict(end_state_key), list(best_plan)
 
 
@@ -222,9 +300,11 @@ def main() -> None:
     parser.add_argument("--refinery", default="refinery.json", help="Refinery 文件名，默认 refinery.json")
     parser.add_argument("--output", help="输出 CSV 路径，默认 <产物名>_asteroid_breakdown.csv")
     parser.add_argument("--overproduce-buffer", type=int, default=1, help="整数规划搜索时允许的额外过量生产缓冲，默认 1")
+    parser.add_argument("--inventory", default=str(DEFAULT_INVENTORY_PATH), help="库存 CSV 路径，默认 Inventory/inventory.csv")
     args = parser.parse_args()
 
     name_map, category_map = load_types_maps()
+    inventory = load_inventory(Path(args.inventory), name_map)
     product_path, target_blueprint, target_output = find_target_blueprint(args.product_name, name_map, category_map)
     recipes = load_recipes(args.refinery, category_map)
 
@@ -234,7 +314,7 @@ def main() -> None:
         type_id = int(enriched["typeID"])
         initial_state[type_id] = initial_state.get(type_id, 0) + int(enriched["quantity"])
 
-    end_state, plan = solve_integer_program(initial_state, recipes, category_map, max(0, args.overproduce_buffer))
+    end_state, plan = solve_integer_program(initial_state, inventory, recipes, category_map, max(0, args.overproduce_buffer))
 
     asteroid_totals = {t: q for t, q in end_state.items() if q > 0 and category_map.get(t, "") == "Asteroid"}
     skipped_totals = {
@@ -248,6 +328,7 @@ def main() -> None:
 
     print(f"已从 {product_path.name} 找到产物：{args.product_name}")
     print(f"使用 Refinery：{args.refinery}")
+    print(f"使用 Inventory：{args.inventory}")
     print(f"整数规划步骤数：{len(plan)}")
     print(f"最小 Asteroid 总量：{sum(asteroid_totals.values())}")
     print(f"已导出分解结果：{output_path}")
