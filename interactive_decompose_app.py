@@ -27,21 +27,16 @@ I18N: dict[str, dict[str, str]] = {
     "zh": {
         "title": "产物分解工具",
         "materials_label": "原料输入 可多次粘贴 支持滚轮和换行",
-        "use_cache": "使用缓存库存",
-        "pick_product": "选择产物",
+        "load_cache": "加载缓存库存",
         "settings": "设置",
         "compute": "确认并计算",
-        "product_dialog_title": "输入产物和数量",
         "product_name": "产物名称",
-        "suggestions": "联想下拉",
         "quantity": "生产数量",
-        "confirm": "确认",
         "error": "错误",
         "calc_fail": "计算失败",
-        "need_product": "请先输入产物名称",
+        "need_product": "请先选择产物",
         "invalid_product": "产物不存在",
         "invalid_qty": "数量必须是正整数",
-        "need_select": "请先选择产物和数量",
         "selected": "已选择产物",
         "demand": "需求数量",
         "ready": "请粘贴库存后点击确认并计算",
@@ -56,26 +51,22 @@ I18N: dict[str, dict[str, str]] = {
         "chinese": "中文",
         "english": "English",
         "save": "保存",
-        "cache_notice": "已使用缓存库存",
+        "cache_loaded": "已加载缓存库存",
+        "cache_empty": "缓存库存为空",
     },
     "en": {
         "title": "Product Decompose Tool",
         "materials_label": "Material input paste multiple times scroll and newline supported",
-        "use_cache": "Use cached inventory",
-        "pick_product": "Select product",
+        "load_cache": "Load cached inventory",
         "settings": "Settings",
         "compute": "Confirm and run",
-        "product_dialog_title": "Input product and quantity",
         "product_name": "Product name",
-        "suggestions": "Suggestion dropdown",
         "quantity": "Quantity",
-        "confirm": "Confirm",
         "error": "Error",
         "calc_fail": "Calculation failed",
-        "need_product": "Please input product name",
+        "need_product": "Please select a product",
         "invalid_product": "Product not found",
         "invalid_qty": "Quantity must be positive integer",
-        "need_select": "Please select product and quantity",
         "selected": "Selected product",
         "demand": "Required quantity",
         "ready": "Paste inventory then confirm and run",
@@ -90,7 +81,8 @@ I18N: dict[str, dict[str, str]] = {
         "chinese": "中文",
         "english": "English",
         "save": "Save",
-        "cache_notice": "Cached inventory used",
+        "cache_loaded": "Cached inventory loaded",
+        "cache_empty": "Cached inventory is empty",
     },
 }
 
@@ -175,13 +167,15 @@ class App:
         self.products = collect_product_names(self.name_map, self.category_map)
 
         self.language = "zh"
-        self.product_name = ""
-        self.required_quantity = 1
-        self.use_cache_var = tk.BooleanVar(value=False)
 
+        self.product_var = tk.StringVar()
+        self.quantity_var = tk.StringVar(value="1")
+
+        self.product_label: tk.Label | None = None
+        self.quantity_label: tk.Label | None = None
+        self.product_combo: ttk.Combobox | None = None
         self.materials_label: tk.Label | None = None
-        self.cache_check: tk.Checkbutton | None = None
-        self.pick_btn: tk.Button | None = None
+        self.load_cache_btn: tk.Button | None = None
         self.settings_btn: tk.Button | None = None
         self.compute_btn: tk.Button | None = None
         self.status_label: tk.Label | None = None
@@ -190,7 +184,6 @@ class App:
         self.root.geometry("760x560")
         self._build_main_window()
         self._apply_language()
-        self._show_product_dialog()
 
     def tr(self, key: str) -> str:
         return I18N[self.language][key]
@@ -199,14 +192,27 @@ class App:
         frame = tk.Frame(self.root, padx=12, pady=12)
         frame.pack(fill=tk.BOTH, expand=True)
 
+        top = tk.Frame(frame)
+        top.pack(fill=tk.X, pady=(0, 8))
+
+        self.product_label = tk.Label(top)
+        self.product_label.grid(row=0, column=0, sticky="w")
+        self.product_combo = ttk.Combobox(top, textvariable=self.product_var, values=self.products)
+        self.product_combo.grid(row=0, column=1, sticky="ew", padx=(8, 12))
+
+        self.quantity_label = tk.Label(top)
+        self.quantity_label.grid(row=0, column=2, sticky="w")
+        qty_entry = tk.Entry(top, textvariable=self.quantity_var, width=10)
+        qty_entry.grid(row=0, column=3, sticky="w", padx=(8, 0))
+        top.columnconfigure(1, weight=1)
+
+        self.product_combo.bind("<KeyRelease>", self._update_dropdown)
+
         self.materials_label = tk.Label(frame)
         self.materials_label.pack(anchor="w")
 
-        self.cache_check = tk.Checkbutton(frame, variable=self.use_cache_var)
-        self.cache_check.pack(anchor="w", pady=(4, 8))
-
         text_wrapper = tk.Frame(frame)
-        text_wrapper.pack(fill=tk.BOTH, expand=True)
+        text_wrapper.pack(fill=tk.BOTH, expand=True, pady=(8, 0))
 
         self.materials_text = tk.Text(text_wrapper, wrap=tk.NONE)
         self.materials_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -222,8 +228,8 @@ class App:
         btn_frame = tk.Frame(frame)
         btn_frame.pack(fill=tk.X, pady=(8, 8))
 
-        self.pick_btn = tk.Button(btn_frame, command=self._show_product_dialog)
-        self.pick_btn.pack(side=tk.LEFT)
+        self.load_cache_btn = tk.Button(btn_frame, command=self._load_cache_into_input)
+        self.load_cache_btn.pack(side=tk.LEFT)
 
         self.settings_btn = tk.Button(btn_frame, command=self._open_settings)
         self.settings_btn.pack(side=tk.LEFT, padx=(8, 0))
@@ -236,70 +242,35 @@ class App:
 
     def _apply_language(self) -> None:
         self.root.title(self.tr("title"))
-        assert self.materials_label and self.cache_check and self.pick_btn and self.settings_btn and self.compute_btn and self.status_label
+        assert self.product_label and self.quantity_label and self.materials_label
+        assert self.load_cache_btn and self.settings_btn and self.compute_btn and self.status_label
+
+        self.product_label.configure(text=self.tr("product_name"))
+        self.quantity_label.configure(text=self.tr("quantity"))
         self.materials_label.configure(text=self.tr("materials_label"))
-        self.cache_check.configure(text=self.tr("use_cache"))
-        self.pick_btn.configure(text=self.tr("pick_product"))
+        self.load_cache_btn.configure(text=self.tr("load_cache"))
         self.settings_btn.configure(text=self.tr("settings"))
         self.compute_btn.configure(text=self.tr("compute"))
-        if self.product_name:
-            self.status_label.configure(
-                text=f"{self.tr('selected')}: {self.product_name}\n{self.tr('demand')}: {self.required_quantity}\n{self.tr('ready')}"
-            )
+        self._refresh_status()
 
-    def _show_product_dialog(self) -> None:
-        dialog = tk.Toplevel(self.root)
-        dialog.title(self.tr("product_dialog_title"))
-        dialog.transient(self.root)
-        dialog.grab_set()
-        dialog.geometry("520x220")
+    def _refresh_status(self, extra: str = "") -> None:
+        assert self.status_label
+        product_name = self.product_var.get().strip()
+        qty_text = self.quantity_var.get().strip() or "1"
+        lines = []
+        if product_name:
+            lines.append(f"{self.tr('selected')}: {product_name}")
+        lines.append(f"{self.tr('demand')}: {qty_text}")
+        lines.append(self.tr("ready"))
+        if extra:
+            lines.append(extra)
+        self.status_label.configure(text="\n".join(lines))
 
-        tk.Label(dialog, text=self.tr("product_name")).pack(anchor="w", padx=12, pady=(12, 4))
-        product_var = tk.StringVar(value=self.product_name)
-        product_combo = ttk.Combobox(dialog, textvariable=product_var, values=self.products)
-        product_combo.pack(fill=tk.X, padx=12)
-
-        tk.Label(dialog, text=self.tr("suggestions")).pack(anchor="w", padx=12, pady=(8, 4))
-        tk.Label(dialog, text="type text and open dropdown", fg="#666").pack(anchor="w", padx=12)
-
-        tk.Label(dialog, text=self.tr("quantity")).pack(anchor="w", padx=12, pady=(8, 4))
-        qty_var = tk.StringVar(value=str(self.required_quantity))
-        qty_entry = tk.Entry(dialog, textvariable=qty_var)
-        qty_entry.pack(fill=tk.X, padx=12)
-
-        def update_dropdown(*_: object) -> None:
-            keyword = product_var.get().strip().lower()
-            matches = [p for p in self.products if keyword in p.lower()] if keyword else self.products
-            product_combo["values"] = matches[:200]
-
-        def confirm() -> None:
-            name = product_var.get().strip()
-            if not name:
-                messagebox.showerror(self.tr("error"), self.tr("need_product"))
-                return
-            if name not in self.products:
-                messagebox.showerror(self.tr("error"), self.tr("invalid_product"))
-                return
-            try:
-                qty = int(qty_var.get().strip())
-            except ValueError:
-                messagebox.showerror(self.tr("error"), self.tr("invalid_qty"))
-                return
-            if qty < 1:
-                messagebox.showerror(self.tr("error"), self.tr("invalid_qty"))
-                return
-
-            self.product_name = name
-            self.required_quantity = qty
-            assert self.status_label
-            self.status_label.configure(
-                text=f"{self.tr('selected')}: {name}\n{self.tr('demand')}: {qty}\n{self.tr('ready')}"
-            )
-            dialog.destroy()
-
-        product_combo.bind("<KeyRelease>", update_dropdown)
-        tk.Button(dialog, text=self.tr("confirm"), command=confirm).pack(fill=tk.X, padx=12, pady=12)
-        update_dropdown()
+    def _update_dropdown(self, *_: object) -> None:
+        assert self.product_combo
+        keyword = self.product_var.get().strip().lower()
+        matches = [p for p in self.products if keyword in p.lower()] if keyword else self.products
+        self.product_combo["values"] = matches[:200]
 
     def _load_cached_inventory(self) -> str:
         if not CACHE_PATH.exists():
@@ -312,8 +283,17 @@ class App:
 
     def _save_cached_inventory(self, inventory_text: str) -> None:
         CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        payload = {"inventory_text": inventory_text}
-        CACHE_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        CACHE_PATH.write_text(json.dumps({"inventory_text": inventory_text}, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def _load_cache_into_input(self) -> None:
+        assert self.materials_text
+        cached = self._load_cached_inventory()
+        if not cached:
+            messagebox.showwarning(self.tr("error"), self.tr("cache_empty"))
+            return
+        self.materials_text.delete("1.0", tk.END)
+        self.materials_text.insert(tk.END, cached)
+        self._refresh_status(self.tr("cache_loaded"))
 
     def _open_settings(self) -> None:
         dialog = tk.Toplevel(self.root)
@@ -324,8 +304,7 @@ class App:
 
         tk.Label(dialog, text=self.tr("language")).pack(anchor="w", padx=12, pady=(12, 4))
         lang_var = tk.StringVar(value=self.language)
-        options = [(self.tr("chinese"), "zh"), (self.tr("english"), "en")]
-        for text, code in options:
+        for text, code in [(self.tr("chinese"), "zh"), (self.tr("english"), "en")]:
             tk.Radiobutton(dialog, text=text, variable=lang_var, value=code).pack(anchor="w", padx=12)
 
         def save() -> None:
@@ -339,8 +318,6 @@ class App:
         result_win = tk.Toplevel(self.root)
         result_win.title(self.tr("result_title"))
         result_win.geometry("700x520")
-        result_win.transient(self.root)
-        result_win.grab_set()
 
         frame = tk.Frame(result_win, padx=12, pady=12)
         frame.pack(fill=tk.BOTH, expand=True)
@@ -355,24 +332,35 @@ class App:
         text.configure(state=tk.DISABLED)
 
     def _run_decompose(self) -> None:
-        if not self.product_name:
-            messagebox.showerror(self.tr("error"), self.tr("need_select"))
+        assert self.materials_text
+
+        product_name = self.product_var.get().strip()
+        if not product_name:
+            messagebox.showwarning(self.tr("error"), self.tr("need_product"))
+            return
+        if product_name not in self.products:
+            messagebox.showerror(self.tr("error"), self.tr("invalid_product"))
             return
 
-        assert self.materials_text and self.status_label
+        try:
+            required_quantity = int(self.quantity_var.get().strip())
+        except ValueError:
+            messagebox.showerror(self.tr("error"), self.tr("invalid_qty"))
+            return
+        if required_quantity < 1:
+            messagebox.showerror(self.tr("error"), self.tr("invalid_qty"))
+            return
+
         pasted_inventory = self.materials_text.get("1.0", tk.END)
-        inventory_text = pasted_inventory
-        if self.use_cache_var.get():
-            inventory_text = self._load_cached_inventory()
-            self.status_label.configure(text=f"{self.status_label.cget('text')}\n{self.tr('cache_notice')}")
-        else:
-            self._save_cached_inventory(pasted_inventory)
+        self._save_cached_inventory(pasted_inventory)
 
         try:
-            result = compute_asteroids(self.product_name, self.required_quantity, inventory_text, self.refinery_file)
+            result = compute_asteroids(product_name, required_quantity, pasted_inventory, self.refinery_file)
         except Exception as exc:
             messagebox.showerror(self.tr("calc_fail"), str(exc))
             return
+
+        self._refresh_status()
 
         lines = [
             f"{self.tr('selected')}: {result['requested_product']}",
@@ -383,7 +371,6 @@ class App:
             "",
             f"{self.tr('asteroid_list')}:",
         ]
-
         if not result["asteroids"]:
             lines.append(self.tr("none"))
         else:
