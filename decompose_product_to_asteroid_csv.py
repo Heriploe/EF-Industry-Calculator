@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""按产物名称递归分解至 Asteroid，并导出 CSV（不可分解原料会跳过）。"""
+"""按产物名称递归分解至 Asteroid，并导出 CSV（使用整数规划搜索最小 Asteroid 总量）。"""
 
 from __future__ import annotations
 
@@ -7,11 +7,10 @@ import argparse
 import csv
 import json
 import re
-from collections import defaultdict
-from fractions import Fraction
+from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
-
 
 ROOT = Path(__file__).resolve().parent
 PRODUCT_DIR = ROOT / "Product"
@@ -21,7 +20,21 @@ TYPES_PATH = ROOT / "types.json"
 
 
 class DecomposeError(RuntimeError):
-    """无法完成分解时抛出的错误。"""
+    pass
+
+
+@dataclass(frozen=True)
+class Recipe:
+    blueprint_id: int
+    source: str
+    inputs: tuple[tuple[int, int], ...]
+    outputs: tuple[tuple[int, int], ...]
+
+
+@dataclass(frozen=True)
+class BranchChoice:
+    recipe_index: int
+    runs: int
 
 
 def load_json(path: Path) -> Any:
@@ -37,11 +50,8 @@ def normalize_filename(name: str) -> str:
 
 def load_types_maps() -> tuple[dict[int, str], dict[int, str]]:
     payload = load_json(TYPES_PATH)
-    if isinstance(payload, dict) and isinstance(payload.get("data"), list):
-        rows = payload["data"]
-    elif isinstance(payload, list):
-        rows = payload
-    else:
+    rows = payload.get("data", []) if isinstance(payload, dict) else payload
+    if not isinstance(rows, list):
         raise DecomposeError("types.json 格式不受支持")
 
     name_map: dict[int, str] = {}
@@ -58,117 +68,133 @@ def load_types_maps() -> tuple[dict[int, str], dict[int, str]]:
 
 def fill_item_meta(item: dict[str, Any], name_map: dict[int, str], category_map: dict[int, str]) -> dict[str, Any]:
     copied = dict(item)
-    type_id = copied.get("typeID")
-    if type_id is None:
+    if copied.get("typeID") is None:
         return copied
-
-    normalized = int(type_id)
-    copied["typeID"] = normalized
-    copied["name"] = copied.get("name") or name_map.get(normalized, "")
-    copied["categoryName"] = copied.get("categoryName") or category_map.get(normalized, "")
+    type_id = int(copied["typeID"])
+    copied["typeID"] = type_id
     copied["quantity"] = int(copied.get("quantity", 0))
+    copied["name"] = copied.get("name") or name_map.get(type_id, "")
+    copied["categoryName"] = copied.get("categoryName") or category_map.get(type_id, "")
     return copied
 
 
 def find_target_blueprint(product_name: str, name_map: dict[int, str], category_map: dict[int, str]) -> tuple[Path, dict[str, Any], dict[str, Any]]:
-    product_files = sorted(PRODUCT_DIR.glob("*.json"))
-    if not product_files:
-        raise DecomposeError("Product 文件夹下未找到任何 JSON 文件")
-
-    for product_path in product_files:
-        blueprints = load_json(product_path)
-        for blueprint in blueprints:
-            outputs = blueprint.get("outputs", [])
-            for output in outputs:
+    for product_path in sorted(PRODUCT_DIR.glob("*.json")):
+        for blueprint in load_json(product_path):
+            for output in blueprint.get("outputs", []):
                 enriched = fill_item_meta(output, name_map, category_map)
                 if enriched.get("name") == product_name:
                     return product_path, blueprint, enriched
-
     raise DecomposeError(f"未在 Product 中找到产物：{product_name}")
 
 
-def build_recipe_index(refinery_file: str, name_map: dict[int, str], category_map: dict[int, str]) -> dict[int, tuple[dict[str, Any], dict[str, Any]]]:
-    recipes: dict[int, tuple[dict[str, Any], dict[str, Any]]] = {}
-
+def load_recipes(refinery_file: str, category_map: dict[int, str]) -> list[Recipe]:
     refinery_path = REFINERY_DIR / refinery_file
     if not refinery_path.exists():
         raise DecomposeError(f"指定的 Refinery 文件不存在：{refinery_file}")
 
+    recipes: list[Recipe] = []
     source_files = [refinery_path, *sorted(PRINTER_DIR.glob("*.json"))]
     for source in source_files:
-        for blueprint in load_json(source):
-            outputs = blueprint.get("outputs", [])
-            for output in outputs:
-                enriched_output = fill_item_meta(output, name_map, category_map)
-                type_id = enriched_output.get("typeID")
-                if type_id is None:
-                    continue
-                if type_id in recipes:
-                    continue
-                normalized_blueprint = {
-                    "blueprintID": blueprint.get("blueprintID"),
-                    "inputs": [fill_item_meta(item, name_map, category_map) for item in blueprint.get("inputs", [])],
-                    "outputs": [fill_item_meta(item, name_map, category_map) for item in outputs],
-                }
-                recipes[type_id] = (normalized_blueprint, enriched_output)
+        for bp in load_json(source):
+            inputs = tuple((int(i["typeID"]), int(i.get("quantity", 0))) for i in bp.get("inputs", []) if i.get("typeID") is not None)
+            outputs = tuple((int(o["typeID"]), int(o.get("quantity", 0))) for o in bp.get("outputs", []) if o.get("typeID") is not None)
+            if not inputs or not outputs:
+                continue
+            # 仅保留“向上生产”配方（输出不是 Asteroid），避免与反向分解配方形成环
+            if any(category_map.get(out_type, "") == "Asteroid" for out_type, _ in outputs):
+                continue
+            recipes.append(
+                Recipe(
+                    blueprint_id=int(bp.get("blueprintID", 0)),
+                    source=source.name,
+                    inputs=inputs,
+                    outputs=outputs,
+                )
+            )
     return recipes
 
 
-def decompose_to_asteroid(
-    item: dict[str, Any],
-    recipes: dict[int, tuple[dict[str, Any], dict[str, Any]]],
-    accum: dict[int, Fraction],
-    skipped: dict[int, Fraction],
-    name_map: dict[int, str],
+def state_to_key(state: dict[int, int]) -> tuple[tuple[int, int], ...]:
+    return tuple(sorted((k, v) for k, v in state.items() if v != 0))
+
+
+def apply_choice(state: dict[int, int], recipe: Recipe, runs: int) -> dict[int, int]:
+    next_state = dict(state)
+    for type_id, qty in recipe.inputs:
+        next_state[type_id] = next_state.get(type_id, 0) + qty * runs
+    for type_id, qty in recipe.outputs:
+        next_state[type_id] = next_state.get(type_id, 0) - qty * runs
+    return next_state
+
+
+def choose_next_item(state: dict[int, int], producible_non_asteroid: set[int]) -> int | None:
+    candidates = [t for t, q in state.items() if q > 0 and t in producible_non_asteroid]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda t: state[t])
+
+
+def solve_integer_program(
+    initial_state: dict[int, int],
+    recipes: list[Recipe],
     category_map: dict[int, str],
-    stack: set[int],
-) -> None:
-    type_id = int(item["typeID"])
-    category = item.get("categoryName") or category_map.get(type_id, "")
-    quantity = Fraction(item["quantity"])
+    overproduce_buffer: int,
+) -> tuple[dict[int, int], list[BranchChoice]]:
+    output_to_recipes: dict[int, list[int]] = {}
+    producible_non_asteroid: set[int] = set()
+    for idx, recipe in enumerate(recipes):
+        for type_id, _ in recipe.outputs:
+            output_to_recipes.setdefault(type_id, []).append(idx)
+            if category_map.get(type_id, "") != "Asteroid":
+                producible_non_asteroid.add(type_id)
 
-    if category == "Asteroid":
-        accum[type_id] += quantity
-        return
+    @lru_cache(maxsize=None)
+    def solve(state_key: tuple[tuple[int, int], ...]) -> tuple[tuple[int, int, int], tuple[BranchChoice, ...], tuple[tuple[int, int], ...]]:
+        state = dict(state_key)
+        next_item = choose_next_item(state, producible_non_asteroid)
+        if next_item is None:
+            asteroid_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") == "Asteroid")
+            skipped_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") != "Asteroid" and t not in producible_non_asteroid)
+            return (asteroid_total, skipped_total, 0), tuple(), state_key
 
-    recipe_entry = recipes.get(type_id)
-    if recipe_entry is None:
-        skipped[type_id] += quantity
-        return
+        best_obj: tuple[int, int, int] | None = None
+        best_plan: tuple[BranchChoice, ...] = tuple()
+        best_end_state = state_key
 
-    if type_id in stack:
-        raise DecomposeError(f"检测到循环分解：{type_id}")
+        for recipe_idx in output_to_recipes.get(next_item, []):
+            recipe = recipes[recipe_idx]
+            out_qty = next((qty for t, qty in recipe.outputs if t == next_item), 0)
+            if out_qty <= 0:
+                continue
 
-    blueprint, recipe_output = recipe_entry
-    output_qty = int(recipe_output.get("quantity", 0))
-    if output_qty <= 0:
-        raise DecomposeError(f"蓝图 {blueprint.get('blueprintID')} 的产出数量无效")
+            demand_qty = state.get(next_item, 0)
+            min_runs = (demand_qty + out_qty - 1) // out_qty
+            max_runs = min_runs + overproduce_buffer
 
-    runs = quantity / Fraction(output_qty)
-    stack.add(type_id)
-    try:
-        for input_item in blueprint["inputs"]:
-            next_item = dict(input_item)
-            next_item["quantity"] = Fraction(int(input_item["quantity"])) * runs
-            decompose_to_asteroid(next_item, recipes, accum, skipped, name_map, category_map, stack)
-    finally:
-        stack.remove(type_id)
+            for runs in range(min_runs, max_runs + 1):
+                child_state = apply_choice(state, recipe, runs)
+                child_obj, child_plan, child_end_state = solve(state_to_key(child_state))
+                current_obj = (child_obj[0], child_obj[1], child_obj[2] + runs)
+                if best_obj is None or current_obj < best_obj:
+                    best_obj = current_obj
+                    best_plan = (BranchChoice(recipe_idx, runs),) + child_plan
+                    best_end_state = child_end_state
+
+        if best_obj is None:
+            # 无可用配方，强制结束（该物料会在终态按 skipped 统计）
+            asteroid_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") == "Asteroid")
+            skipped_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") != "Asteroid" and t not in producible_non_asteroid)
+            return (asteroid_total, skipped_total, 0), tuple(), state_key
+
+        return best_obj, best_plan, best_end_state
+
+    _, best_plan, end_state_key = solve(state_to_key(initial_state))
+    return dict(end_state_key), list(best_plan)
 
 
-def fraction_to_str(value: Fraction) -> str:
-    if value.denominator == 1:
-        return str(value.numerator)
-    return f"{float(value):.6f}".rstrip("0").rstrip(".")
-
-
-def write_csv(
-    output_path: Path,
-    product_name: str,
-    product_output_quantity: int,
-    asteroid_totals: dict[int, Fraction],
-    name_map: dict[int, str],
-) -> None:
-    rows: list[dict[str, str]] = []
+def write_csv(output_path: Path, product_name: str, product_output_quantity: int, asteroid_totals: dict[int, int], name_map: dict[int, str]) -> None:
+    rows = []
     for type_id, quantity in sorted(asteroid_totals.items(), key=lambda x: (name_map.get(x[0], ""), x[0])):
         rows.append(
             {
@@ -176,7 +202,7 @@ def write_csv(
                 "productOutputQuantity": str(product_output_quantity),
                 "asteroidTypeID": str(type_id),
                 "asteroidName": name_map.get(type_id, ""),
-                "requiredQuantity": fraction_to_str(quantity),
+                "requiredQuantity": str(quantity),
                 "categoryName": "Asteroid",
             }
         )
@@ -184,46 +210,52 @@ def write_csv(
     with output_path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(
             f,
-            fieldnames=[
-                "productName",
-                "productOutputQuantity",
-                "asteroidTypeID",
-                "asteroidName",
-                "requiredQuantity",
-                "categoryName",
-            ],
+            fieldnames=["productName", "productOutputQuantity", "asteroidTypeID", "asteroidName", "requiredQuantity", "categoryName"],
         )
         writer.writeheader()
         writer.writerows(rows)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="将 Product 中指定产物递归分解至 Asteroid 并导出 CSV")
-    parser.add_argument("product_name", help="Product 中要分解的产物名称（需精确匹配）")
+    parser = argparse.ArgumentParser(description="将 Product 中指定产物分解至 Asteroid，并使用整数规划最小化 Asteroid 总量")
+    parser.add_argument("product_name", help="Product 中要分解的产物名称（精确匹配）")
     parser.add_argument("--refinery", default="refinery.json", help="Refinery 文件名，默认 refinery.json")
     parser.add_argument("--output", help="输出 CSV 路径，默认 <产物名>_asteroid_breakdown.csv")
+    parser.add_argument("--overproduce-buffer", type=int, default=1, help="整数规划搜索时允许的额外过量生产缓冲，默认 1")
     args = parser.parse_args()
 
     name_map, category_map = load_types_maps()
     product_path, target_blueprint, target_output = find_target_blueprint(args.product_name, name_map, category_map)
-    recipes = build_recipe_index(args.refinery, name_map, category_map)
+    recipes = load_recipes(args.refinery, category_map)
 
-    asteroid_totals: dict[int, Fraction] = defaultdict(Fraction)
-    skipped_totals: dict[int, Fraction] = defaultdict(Fraction)
-    for input_item in target_blueprint.get("inputs", []):
-        enriched = fill_item_meta(input_item, name_map, category_map)
-        decompose_to_asteroid(enriched, recipes, asteroid_totals, skipped_totals, name_map, category_map, set())
+    initial_state: dict[int, int] = {}
+    for item in target_blueprint.get("inputs", []):
+        enriched = fill_item_meta(item, name_map, category_map)
+        type_id = int(enriched["typeID"])
+        initial_state[type_id] = initial_state.get(type_id, 0) + int(enriched["quantity"])
+
+    end_state, plan = solve_integer_program(initial_state, recipes, category_map, max(0, args.overproduce_buffer))
+
+    asteroid_totals = {t: q for t, q in end_state.items() if q > 0 and category_map.get(t, "") == "Asteroid"}
+    skipped_totals = {
+        t: q
+        for t, q in end_state.items()
+        if q > 0 and category_map.get(t, "") != "Asteroid" and all(t != out_t for r in recipes for out_t, _ in r.outputs)
+    }
 
     output_path = Path(args.output) if args.output else ROOT / f"{normalize_filename(args.product_name)}_asteroid_breakdown.csv"
     write_csv(output_path, args.product_name, int(target_output.get("quantity", 1)), asteroid_totals, name_map)
 
     print(f"已从 {product_path.name} 找到产物：{args.product_name}")
     print(f"使用 Refinery：{args.refinery}")
+    print(f"整数规划步骤数：{len(plan)}")
+    print(f"最小 Asteroid 总量：{sum(asteroid_totals.values())}")
     print(f"已导出分解结果：{output_path}")
+
     if skipped_totals:
         print("以下原料无法在指定 Refinery + Printer 中继续分解，已跳过：")
         for type_id, qty in sorted(skipped_totals.items(), key=lambda x: (name_map.get(x[0], ""), x[0])):
-            print(f"- {name_map.get(type_id, '')}({type_id}): {fraction_to_str(qty)}")
+            print(f"- {name_map.get(type_id, '')}({type_id}): {qty}")
 
 
 if __name__ == "__main__":
