@@ -36,3 +36,27 @@ python3 interactive_decompose_app.py
 - 并非界面故障 主要是 `field_refinery.json` 的配方覆盖范围较小
 - 某些产物分解时会出现较多未分解原料 因此可能看起来像无法计算
 - 结果窗口已增加“未分解原料”展示 并在选择 `field_refinery.json` 时提示该原因
+
+
+## 打包可执行文件
+
+请在**非管理员终端**运行 PyInstaller（官方已提示管理员运行将被后续版本禁止）。
+
+已提供打包脚本 `build_interactive_decompose_app.sh`，会自动检查并安装 PyInstaller，然后输出可执行文件。
+
+```bash
+./build_interactive_decompose_app.sh
+```
+
+打包产物位置：
+
+- Linux/macOS: `dist/interactive_decompose_app`
+- Windows (在 Windows 环境执行): `dist/interactive_decompose_app.exe`
+
+同时仓库内包含 `interactive_decompose_app.spec`，可直接用 spec 方式打包：
+
+```bash
+python3 -m PyInstaller interactive_decompose_app.spec
+```
+
+说明：`interactive_decompose_app.spec` 已兼容 PyInstaller 执行环境中 `__file__` 不存在的情况。
