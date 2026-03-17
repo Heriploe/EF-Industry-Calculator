@@ -1,0 +1,77 @@
+[
+  {
+    "blueprintID": 1019,
+    "primaryTypeID": 84182,
+    "primaryTypeName": "Reinforced Alloys",
+    "runTime": 4,
+    "inputs": [
+      {
+        "quantity": 1050,
+        "typeID": 77801,
+        "name": "Nickel-Iron Veins"
+      },
+      {
+        "quantity": 1050,
+        "typeID": 88235,
+        "name": "Feldspar Crystal Shards"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 14,
+        "typeID": 84182,
+        "name": "Reinforced Alloys"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1020,
+    "primaryTypeID": 84210,
+    "primaryTypeName": "Carbon Weave",
+    "runTime": 5,
+    "inputs": [
+      {
+        "quantity": 3150,
+        "typeID": 77804,
+        "name": "Tholin Aggregates"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 14,
+        "typeID": 84210,
+        "name": "Carbon Weave"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1021,
+    "primaryTypeID": 88561,
+    "primaryTypeName": "Thermal Composites",
+    "runTime": 4,
+    "inputs": [
+      {
+        "quantity": 630,
+        "typeID": 77803,
+        "name": "Silicon Dust"
+      },
+      {
+        "quantity": 1260,
+        "typeID": 77804,
+        "name": "Tholin Aggregates"
+      },
+      {
+        "quantity": 210,
+        "typeID": 88235,
+        "name": "Feldspar Crystal Shards"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 14,
+        "typeID": 88561,
+        "name": "Thermal Composites"
+      }
+    ]
+  }
+]

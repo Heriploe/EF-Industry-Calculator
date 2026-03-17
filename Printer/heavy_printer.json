@@ -1,0 +1,62 @@
+[
+  {
+    "blueprintID": 1055,
+    "primaryTypeID": 88844,
+    "primaryTypeName": "Packaged Thermal Composites",
+    "runTime": 32,
+    "inputs": [
+      {
+        "quantity": 10,
+        "typeID": 88843,
+        "name": "Batched Thermal Composites"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 88844,
+        "name": "Packaged Thermal Composites"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1058,
+    "primaryTypeID": 88842,
+    "primaryTypeName": "Packaged Carbon Weave",
+    "runTime": 37,
+    "inputs": [
+      {
+        "quantity": 10,
+        "typeID": 88841,
+        "name": "Batched Carbon Weave"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 88842,
+        "name": "Packaged Carbon Weave"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1059,
+    "primaryTypeID": 84206,
+    "primaryTypeName": "Packaged Reinforced Alloys",
+    "runTime": 32,
+    "inputs": [
+      {
+        "quantity": 10,
+        "typeID": 84204,
+        "name": "Batched Reinforced Alloys"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 84206,
+        "name": "Packaged Reinforced Alloys"
+      }
+    ]
+  }
+]
