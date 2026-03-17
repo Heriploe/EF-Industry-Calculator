@@ -1,0 +1,32 @@
+[
+  {
+    "blueprintID": 1015,
+    "primaryTypeID": 89089,
+    "primaryTypeName": "Building Foam",
+    "runTime": 25,
+    "inputs": [
+      {
+        "quantity": 65,
+        "typeID": 84182,
+        "name": "Reinforced Alloys"
+      },
+      {
+        "quantity": 65,
+        "typeID": 84210,
+        "name": "Carbon Weave"
+      },
+      {
+        "quantity": 65,
+        "typeID": 88561,
+        "name": "Thermal Composites"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 10,
+        "typeID": 89089,
+        "name": "Building Foam"
+      }
+    ]
+  }
+]
