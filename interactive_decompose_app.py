@@ -22,6 +22,7 @@ from decompose_product_to_asteroid_csv import (
 )
 
 CACHE_PATH = Path(__file__).resolve().parent / "Inventory" / "inventory_cache.json"
+REFINERY_OPTIONS = ["refinery.json", "heavy_refinery.json", "field_refinery.json"]
 
 I18N: dict[str, dict[str, str]] = {
     "zh": {
@@ -32,13 +33,16 @@ I18N: dict[str, dict[str, str]] = {
         "compute": "确认并计算",
         "product_name": "产物名称",
         "quantity": "生产数量",
+        "refinery": "Refinery",
         "error": "错误",
         "calc_fail": "计算失败",
         "need_product": "请先选择产物",
         "invalid_product": "产物不存在",
         "invalid_qty": "数量必须是正整数",
+        "invalid_refinery": "Refinery 选项无效",
         "selected": "已选择产物",
         "demand": "需求数量",
+        "selected_refinery": "当前 Refinery",
         "ready": "请粘贴库存后点击确认并计算",
         "result_title": "分解结果",
         "runs": "执行次数",
@@ -62,13 +66,16 @@ I18N: dict[str, dict[str, str]] = {
         "compute": "Confirm and run",
         "product_name": "Product name",
         "quantity": "Quantity",
+        "refinery": "Refinery",
         "error": "Error",
         "calc_fail": "Calculation failed",
         "need_product": "Please select a product",
         "invalid_product": "Product not found",
         "invalid_qty": "Quantity must be positive integer",
+        "invalid_refinery": "Invalid refinery option",
         "selected": "Selected product",
         "demand": "Required quantity",
+        "selected_refinery": "Selected refinery",
         "ready": "Paste inventory then confirm and run",
         "result_title": "Decompose result",
         "runs": "Runs",
@@ -162,18 +169,21 @@ def compute_asteroids(product_name: str, required_quantity: int, inventory_text:
 class App:
     def __init__(self, root: tk.Tk, refinery_file: str):
         self.root = root
-        self.refinery_file = refinery_file
         self.name_map, self.category_map = load_types_maps()
         self.products = collect_product_names(self.name_map, self.category_map)
 
         self.language = "zh"
+        default_refinery = refinery_file if refinery_file in REFINERY_OPTIONS else REFINERY_OPTIONS[0]
 
         self.product_var = tk.StringVar()
         self.quantity_var = tk.StringVar(value="1")
+        self.refinery_var = tk.StringVar(value=default_refinery)
 
         self.product_label: tk.Label | None = None
         self.quantity_label: tk.Label | None = None
+        self.refinery_label: tk.Label | None = None
         self.product_combo: ttk.Combobox | None = None
+        self.refinery_combo: ttk.Combobox | None = None
         self.materials_label: tk.Label | None = None
         self.load_cache_btn: tk.Button | None = None
         self.settings_btn: tk.Button | None = None
@@ -181,7 +191,7 @@ class App:
         self.status_label: tk.Label | None = None
         self.materials_text: tk.Text | None = None
 
-        self.root.geometry("760x560")
+        self.root.geometry("820x580")
         self._build_main_window()
         self._apply_language()
 
@@ -202,8 +212,14 @@ class App:
 
         self.quantity_label = tk.Label(top)
         self.quantity_label.grid(row=0, column=2, sticky="w")
-        qty_entry = tk.Entry(top, textvariable=self.quantity_var, width=10)
-        qty_entry.grid(row=0, column=3, sticky="w", padx=(8, 0))
+        qty_entry = tk.Entry(top, textvariable=self.quantity_var, width=8)
+        qty_entry.grid(row=0, column=3, sticky="w", padx=(8, 12))
+
+        self.refinery_label = tk.Label(top)
+        self.refinery_label.grid(row=0, column=4, sticky="w")
+        self.refinery_combo = ttk.Combobox(top, textvariable=self.refinery_var, values=REFINERY_OPTIONS, state="readonly", width=18)
+        self.refinery_combo.grid(row=0, column=5, sticky="w", padx=(8, 0))
+
         top.columnconfigure(1, weight=1)
 
         self.product_combo.bind("<KeyRelease>", self._update_dropdown)
@@ -242,11 +258,12 @@ class App:
 
     def _apply_language(self) -> None:
         self.root.title(self.tr("title"))
-        assert self.product_label and self.quantity_label and self.materials_label
+        assert self.product_label and self.quantity_label and self.refinery_label and self.materials_label
         assert self.load_cache_btn and self.settings_btn and self.compute_btn and self.status_label
 
         self.product_label.configure(text=self.tr("product_name"))
         self.quantity_label.configure(text=self.tr("quantity"))
+        self.refinery_label.configure(text=self.tr("refinery"))
         self.materials_label.configure(text=self.tr("materials_label"))
         self.load_cache_btn.configure(text=self.tr("load_cache"))
         self.settings_btn.configure(text=self.tr("settings"))
@@ -257,10 +274,12 @@ class App:
         assert self.status_label
         product_name = self.product_var.get().strip()
         qty_text = self.quantity_var.get().strip() or "1"
+        refinery = self.refinery_var.get().strip() or REFINERY_OPTIONS[0]
         lines = []
         if product_name:
             lines.append(f"{self.tr('selected')}: {product_name}")
         lines.append(f"{self.tr('demand')}: {qty_text}")
+        lines.append(f"{self.tr('selected_refinery')}: {refinery}")
         lines.append(self.tr("ready"))
         if extra:
             lines.append(extra)
@@ -342,6 +361,11 @@ class App:
             messagebox.showerror(self.tr("error"), self.tr("invalid_product"))
             return
 
+        refinery = self.refinery_var.get().strip()
+        if refinery not in REFINERY_OPTIONS:
+            messagebox.showerror(self.tr("error"), self.tr("invalid_refinery"))
+            return
+
         try:
             required_quantity = int(self.quantity_var.get().strip())
         except ValueError:
@@ -355,7 +379,7 @@ class App:
         self._save_cached_inventory(pasted_inventory)
 
         try:
-            result = compute_asteroids(product_name, required_quantity, pasted_inventory, self.refinery_file)
+            result = compute_asteroids(product_name, required_quantity, pasted_inventory, refinery)
         except Exception as exc:
             messagebox.showerror(self.tr("calc_fail"), str(exc))
             return
@@ -365,6 +389,7 @@ class App:
         lines = [
             f"{self.tr('selected')}: {result['requested_product']}",
             f"{self.tr('demand')}: {result['requested_quantity']}",
+            f"{self.tr('selected_refinery')}: {refinery}",
             f"{self.tr('runs')}: {result['planned_runs']}",
             f"{self.tr('run_output')}: {result['single_run_output']}",
             f"{self.tr('actual_output')}: {result['actual_output']}",
