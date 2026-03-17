@@ -22,6 +22,7 @@ from decompose_product_to_asteroid_csv import (
 )
 
 CACHE_PATH = Path(__file__).resolve().parent / "Inventory" / "inventory_cache.json"
+SETTINGS_PATH = Path(__file__).resolve().parent / "Inventory" / "app_settings.json"
 REFINERY_OPTIONS = ["refinery.json", "heavy_refinery.json", "field_refinery.json"]
 
 I18N: dict[str, dict[str, str]] = {
@@ -49,6 +50,8 @@ I18N: dict[str, dict[str, str]] = {
         "run_output": "单次产出",
         "actual_output": "实际产出",
         "asteroid_list": "Asteroid 名称及个数",
+        "skipped_list": "未分解原料",
+        "field_hint": "若未分解原料较多 可能是 field_refinery 配方覆盖不足",
         "none": "无",
         "settings_title": "设置",
         "language": "语言",
@@ -82,6 +85,8 @@ I18N: dict[str, dict[str, str]] = {
         "run_output": "Output per run",
         "actual_output": "Actual output",
         "asteroid_list": "Asteroid name and count",
+        "skipped_list": "Undecomposed materials",
+        "field_hint": "Many undecomposed materials can mean field_refinery has limited recipe coverage",
         "none": "None",
         "settings_title": "Settings",
         "language": "Language",
@@ -147,6 +152,7 @@ def compute_asteroids(product_name: str, required_quantity: int, inventory_text:
         initial_state[type_id] = initial_state.get(type_id, 0) + int(enriched["quantity"]) * runs
 
     recipes = load_recipes(refinery_file, category_map)
+    producible = {out_type for recipe in recipes for out_type, _ in recipe.outputs}
     end_state, _ = solve_integer_program(initial_state, inventory, recipes, category_map, overproduce_buffer=1)
 
     asteroids = [
@@ -156,6 +162,13 @@ def compute_asteroids(product_name: str, required_quantity: int, inventory_text:
     ]
     asteroids.sort(key=lambda row: row[0])
 
+    skipped = [
+        (name_map.get(type_id, ""), quantity)
+        for type_id, quantity in end_state.items()
+        if quantity > 0 and category_map.get(type_id, "") != "Asteroid" and type_id not in producible
+    ]
+    skipped.sort(key=lambda row: row[0])
+
     return {
         "requested_product": product_name,
         "requested_quantity": required_quantity,
@@ -163,6 +176,7 @@ def compute_asteroids(product_name: str, required_quantity: int, inventory_text:
         "single_run_output": output_qty,
         "actual_output": runs * output_qty,
         "asteroids": asteroids,
+        "skipped": skipped,
     }
 
 
@@ -172,7 +186,7 @@ class App:
         self.name_map, self.category_map = load_types_maps()
         self.products = collect_product_names(self.name_map, self.category_map)
 
-        self.language = "zh"
+        self.language = self._load_language_setting()
         default_refinery = refinery_file if refinery_file in REFINERY_OPTIONS else REFINERY_OPTIONS[0]
 
         self.product_var = tk.StringVar()
@@ -191,12 +205,29 @@ class App:
         self.status_label: tk.Label | None = None
         self.materials_text: tk.Text | None = None
 
+        self.result_window: tk.Toplevel | None = None
+        self.result_text: tk.Text | None = None
+
         self.root.geometry("820x580")
         self._build_main_window()
         self._apply_language()
 
     def tr(self, key: str) -> str:
         return I18N[self.language][key]
+
+    def _load_language_setting(self) -> str:
+        if not SETTINGS_PATH.exists():
+            return "en"
+        try:
+            payload = json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
+            language = str(payload.get("language", "en"))
+            return language if language in I18N else "en"
+        except Exception:
+            return "en"
+
+    def _save_language_setting(self) -> None:
+        SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SETTINGS_PATH.write_text(json.dumps({"language": self.language}, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _build_main_window(self) -> None:
         frame = tk.Frame(self.root, padx=12, pady=12)
@@ -328,27 +359,37 @@ class App:
 
         def save() -> None:
             self.language = lang_var.get()
+            self._save_language_setting()
             self._apply_language()
             dialog.destroy()
 
         tk.Button(dialog, text=self.tr("save"), command=save).pack(fill=tk.X, padx=12, pady=12)
 
     def _show_result_window(self, content: str) -> None:
-        result_win = tk.Toplevel(self.root)
-        result_win.title(self.tr("result_title"))
-        result_win.geometry("700x520")
+        if self.result_window and self.result_window.winfo_exists() and self.result_text:
+            self.result_text.configure(state=tk.NORMAL)
+            self.result_text.delete("1.0", tk.END)
+            self.result_text.insert(tk.END, content)
+            self.result_text.configure(state=tk.DISABLED)
+            self.result_window.lift()
+            self.result_window.focus_force()
+            return
 
-        frame = tk.Frame(result_win, padx=12, pady=12)
+        self.result_window = tk.Toplevel(self.root)
+        self.result_window.title(self.tr("result_title"))
+        self.result_window.geometry("700x520")
+
+        frame = tk.Frame(self.result_window, padx=12, pady=12)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        text = tk.Text(frame, wrap=tk.WORD)
-        text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scroll = tk.Scrollbar(frame, orient=tk.VERTICAL, command=text.yview)
+        self.result_text = tk.Text(frame, wrap=tk.WORD)
+        self.result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll = tk.Scrollbar(frame, orient=tk.VERTICAL, command=self.result_text.yview)
         scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        text.configure(yscrollcommand=scroll.set)
+        self.result_text.configure(yscrollcommand=scroll.set)
 
-        text.insert(tk.END, content)
-        text.configure(state=tk.DISABLED)
+        self.result_text.insert(tk.END, content)
+        self.result_text.configure(state=tk.DISABLED)
 
     def _run_decompose(self) -> None:
         assert self.materials_text
@@ -401,6 +442,14 @@ class App:
         else:
             for name, qty in result["asteroids"]:
                 lines.append(f"- {name}: {qty}")
+
+        if result["skipped"]:
+            lines.append("")
+            lines.append(f"{self.tr('skipped_list')}:")
+            for name, qty in result["skipped"]:
+                lines.append(f"- {name}: {qty}")
+            if refinery == "field_refinery.json":
+                lines.append(self.tr("field_hint"))
 
         self._show_result_window("\n".join(lines))
 

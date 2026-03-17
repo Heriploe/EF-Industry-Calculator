@@ -17,7 +17,7 @@ python3 interactive_decompose_app.py
    - `field_refinery.json`
 3. 下方输入原料库存 可多次粘贴 支持滚轮和 Enter 换行
 4. 点击加载缓存库存按钮后 自动用缓存内容替换输入框
-5. 点击确认并计算后 打开新的结果窗口 显示 Asteroid 名称及个数
+5. 点击确认并计算后 若结果窗口已打开则刷新原窗口 否则新建窗口
 
 校验规则
 
@@ -25,6 +25,14 @@ python3 interactive_decompose_app.py
 - 粘贴库存完全替代基础库存
 - 每次计算时 当前输入库存会写入缓存文件 `Inventory/inventory_cache.json`
 
-设置
+语言与设置缓存
 
-- 提供语言切换 可在中文与英文间切换
+- 程序默认语言为英文
+- 在设置中切换语言后 会保存到 `Inventory/app_settings.json`
+- 下次启动会自动恢复上次选择的语言
+
+关于 `field_refinery.json` 无法计算的原因
+
+- 并非界面故障 主要是 `field_refinery.json` 的配方覆盖范围较小
+- 某些产物分解时会出现较多未分解原料 因此可能看起来像无法计算
+- 结果窗口已增加“未分解原料”展示 并在选择 `field_refinery.json` 时提示该原因
