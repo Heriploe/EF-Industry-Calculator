@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
-"""交互式分解界面：支持产物联想、数量输入、原料粘贴，并输出 Asteroid 需求。"""
+"""Tkinter 交互式分解界面：产物联想 + 数量输入 + 原料粘贴，输出 Asteroid 名称和数量。"""
 
 from __future__ import annotations
 
 import argparse
-import json
 import math
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
+import tkinter as tk
+from tkinter import messagebox
 from typing import Any
 
 from decompose_product_to_asteroid_csv import (
-    DEFAULT_INVENTORY_PATH,
     PRODUCT_DIR,
     find_target_blueprint,
     fill_item_meta,
-    load_inventory,
     load_json,
     load_recipes,
     load_types_maps,
@@ -30,49 +26,48 @@ def collect_product_names(name_map: dict[int, str], category_map: dict[int, str]
         for blueprint in load_json(product_path):
             for output in blueprint.get("outputs", []):
                 enriched = fill_item_meta(output, name_map, category_map)
-                name = enriched.get("name", "").strip()
-                if name:
-                    names.add(name)
+                product_name = enriched.get("name", "").strip()
+                if product_name:
+                    names.add(product_name)
     return sorted(names)
 
 
 def parse_inventory_text(raw_text: str, name_map: dict[int, str]) -> dict[int, int]:
-    name_to_type: dict[str, int] = {name: type_id for type_id, name in name_map.items() if name}
-    parsed: dict[int, int] = {}
+    """解析粘贴库存。每行格式：名称\t数量 或 名称,数量。"""
+    name_to_type = {name: type_id for type_id, name in name_map.items() if name}
+    inventory: dict[int, int] = {}
 
     for raw_line in raw_text.splitlines():
         line = raw_line.strip()
         if not line:
             continue
-        parts = [segment.strip() for segment in line.replace(",", "\t").split("\t") if segment.strip()]
+        parts = [part.strip() for part in line.replace(",", "\t").split("\t") if part.strip()]
         if len(parts) < 2:
             continue
 
         item_name = parts[0]
         try:
-            qty = int(parts[1])
+            quantity = int(parts[1])
         except ValueError:
             continue
 
         type_id = name_to_type.get(item_name)
         if type_id is None:
             continue
-        parsed[type_id] = parsed.get(type_id, 0) + qty
+        inventory[type_id] = inventory.get(type_id, 0) + quantity
 
-    return parsed
+    return inventory
 
 
-def compute_asteroid_breakdown(product_name: str, required_quantity: int, pasted_inventory: str, refinery_file: str) -> dict[str, Any]:
+def compute_asteroids(product_name: str, required_quantity: int, pasted_inventory_text: str, refinery_file: str) -> dict[str, Any]:
     name_map, category_map = load_types_maps()
-    base_inventory = load_inventory(Path(DEFAULT_INVENTORY_PATH), name_map)
-    extra_inventory = parse_inventory_text(pasted_inventory, name_map)
-    merged_inventory = dict(base_inventory)
-    for type_id, qty in extra_inventory.items():
-        merged_inventory[type_id] = merged_inventory.get(type_id, 0) + qty
+
+    # 用户要求：粘贴库存完全替代基础库存
+    inventory = parse_inventory_text(pasted_inventory_text, name_map)
 
     _, target_blueprint, target_output = find_target_blueprint(product_name, name_map, category_map)
-    target_output_qty = int(target_output.get("quantity", 1)) or 1
-    runs = max(1, math.ceil(required_quantity / target_output_qty))
+    output_qty = int(target_output.get("quantity", 1)) or 1
+    runs = max(1, math.ceil(required_quantity / output_qty))
 
     initial_state: dict[int, int] = {}
     for item in target_blueprint.get("inputs", []):
@@ -81,190 +76,185 @@ def compute_asteroid_breakdown(product_name: str, required_quantity: int, pasted
         initial_state[type_id] = initial_state.get(type_id, 0) + int(enriched["quantity"]) * runs
 
     recipes = load_recipes(refinery_file, category_map)
-    end_state, _ = solve_integer_program(initial_state, merged_inventory, recipes, category_map, overproduce_buffer=1)
+    end_state, _ = solve_integer_program(initial_state, inventory, recipes, category_map, overproduce_buffer=1)
 
-    asteroid_totals = [
-        {
-            "name": name_map.get(type_id, ""),
-            "quantity": qty,
-        }
-        for type_id, qty in end_state.items()
-        if qty > 0 and category_map.get(type_id, "") == "Asteroid"
+    asteroids = [
+        (name_map.get(type_id, ""), quantity)
+        for type_id, quantity in end_state.items()
+        if quantity > 0 and category_map.get(type_id, "") == "Asteroid"
     ]
-    asteroid_totals.sort(key=lambda row: row["name"])
+    asteroids.sort(key=lambda row: row[0])
 
     return {
-        "requestedProduct": product_name,
-        "requestedQuantity": required_quantity,
-        "plannedRuns": runs,
-        "singleRunOutput": target_output_qty,
-        "actualOutput": runs * target_output_qty,
-        "asteroids": asteroid_totals,
+        "requested_product": product_name,
+        "requested_quantity": required_quantity,
+        "planned_runs": runs,
+        "single_run_output": output_qty,
+        "actual_output": runs * output_qty,
+        "asteroids": asteroids,
     }
 
 
-def build_html(products: list[str]) -> str:
-    products_json = json.dumps(products, ensure_ascii=False)
-    return f"""<!doctype html>
-<html lang=\"zh-CN\">
-<head>
-  <meta charset=\"utf-8\" />
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
-  <title>Industry Decompose UI</title>
-  <style>
-    body {{ font-family: Arial, sans-serif; margin: 20px; }}
-    .modal {{ position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; }}
-    .card {{ background: #fff; border-radius: 8px; padding: 16px; width: min(92vw, 580px); }}
-    input, textarea, button {{ font-size: 14px; width: 100%; box-sizing: border-box; margin-top: 8px; }}
-    textarea {{ min-height: 240px; resize: vertical; overflow: auto; }}
-    #result {{ margin-top: 16px; white-space: pre-wrap; background: #f7f7f7; padding: 12px; border-radius: 8px; }}
-  </style>
-</head>
-<body>
-  <h2>产物分解到 Asteroid</h2>
+class App:
+    def __init__(self, root: tk.Tk, refinery_file: str):
+        self.root = root
+        self.refinery_file = refinery_file
+        self.name_map, self.category_map = load_types_maps()
+        self.products = collect_product_names(self.name_map, self.category_map)
 
-  <div id=\"productModal\" class=\"modal\">
-    <div class=\"card\">
-      <h3>输入产物与需求数量</h3>
-      <input id=\"productInput\" list=\"productOptions\" placeholder=\"输入产物名称（可联想）\" />
-      <datalist id=\"productOptions\"></datalist>
-      <input id=\"quantityInput\" type=\"number\" min=\"1\" value=\"1\" placeholder=\"所需生产数量\" />
-      <button id=\"confirmProduct\">确认</button>
-    </div>
-  </div>
+        self.product_name = ""
+        self.required_quantity = 1
 
-  <section id=\"materialsSection\" style=\"display:none\">
-    <p>可多次粘贴原料（每行: 名称\t数量 或 名称,数量）。输入框支持滚轮滚动和 Enter 换行。</p>
-    <textarea id=\"materialsInput\" placeholder=\"例如:\nIron Ore\t120\nCopper Ore\t80\"></textarea>
-    <button id=\"runBtn\">确认并计算</button>
-  </section>
+        self.root.title("Industry Decompose (Tkinter)")
+        self.root.geometry("760x560")
 
-  <pre id=\"result\"></pre>
+        self._build_main_window()
+        self._show_product_dialog()
 
-  <script>
-    const products = {products_json};
-    const optionBox = document.getElementById('productOptions');
-    products.forEach(name => {{
-      const option = document.createElement('option');
-      option.value = name;
-      optionBox.appendChild(option);
-    }});
+    def _build_main_window(self) -> None:
+        frame = tk.Frame(self.root, padx=12, pady=12)
+        frame.pack(fill=tk.BOTH, expand=True)
 
-    const state = {{ productName: '', quantity: 1 }};
+        tk.Label(frame, text="原料输入（可多次粘贴；支持滚轮滚动；Enter 可换行）").pack(anchor="w")
 
-    document.getElementById('confirmProduct').addEventListener('click', () => {{
-      const productName = document.getElementById('productInput').value.trim();
-      const quantity = Number(document.getElementById('quantityInput').value || '1');
-      if (!productName) {{
-        alert('请先输入产物名称');
-        return;
-      }}
-      if (!Number.isFinite(quantity) || quantity < 1) {{
-        alert('数量需为正整数');
-        return;
-      }}
-      state.productName = productName;
-      state.quantity = Math.floor(quantity);
-      document.getElementById('productModal').style.display = 'none';
-      document.getElementById('materialsSection').style.display = 'block';
-      document.getElementById('result').textContent = `已选择产物: ${{state.productName}}\n需求数量: ${{state.quantity}}`;
-    }});
+        text_wrapper = tk.Frame(frame)
+        text_wrapper.pack(fill=tk.BOTH, expand=True, pady=(8, 8))
 
-    document.getElementById('runBtn').addEventListener('click', async () => {{
-      const pastedMaterials = document.getElementById('materialsInput').value;
-      document.getElementById('result').textContent = '计算中...';
-      const resp = await fetch('/api/decompose', {{
-        method: 'POST',
-        headers: {{ 'Content-Type': 'application/json' }},
-        body: JSON.stringify({{
-          productName: state.productName,
-          quantity: state.quantity,
-          materials: pastedMaterials,
-        }}),
-      }});
-      const payload = await resp.json();
-      if (!resp.ok) {{
-        document.getElementById('result').textContent = `失败: ${{payload.error || 'unknown error'}}`;
-        return;
-      }}
-      const lines = [
-        `产物: ${{payload.requestedProduct}}`,
-        `需求数量: ${{payload.requestedQuantity}}`,
-        `计划执行次数: ${{payload.plannedRuns}} (单次产出 ${{payload.singleRunOutput}}，实际产出 ${{payload.actualOutput}})`,
-        '',
-        'Asteroid 需求:',
-      ];
-      if (!payload.asteroids.length) {{
-        lines.push('  (无)');
-      }} else {{
-        payload.asteroids.forEach(row => lines.push(`- ${{row.name}}: ${{row.quantity}}`));
-      }}
-      document.getElementById('result').textContent = lines.join('\n');
-    }});
-  </script>
-</body>
-</html>"""
+        self.materials_text = tk.Text(text_wrapper, wrap=tk.NONE)
+        self.materials_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        y_scroll = tk.Scrollbar(text_wrapper, orient=tk.VERTICAL, command=self.materials_text.yview)
+        y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.materials_text.configure(yscrollcommand=y_scroll.set)
 
-class Handler(BaseHTTPRequestHandler):
-    products: list[str] = []
-    refinery_file: str = "refinery.json"
+        x_scroll = tk.Scrollbar(frame, orient=tk.HORIZONTAL, command=self.materials_text.xview)
+        x_scroll.pack(fill=tk.X)
+        self.materials_text.configure(xscrollcommand=x_scroll.set)
 
-    def _send_json(self, payload: dict[str, Any], status: int = HTTPStatus.OK) -> None:
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        btn_frame = tk.Frame(frame)
+        btn_frame.pack(fill=tk.X, pady=(8, 8))
 
-    def do_GET(self) -> None:  # noqa: N802
-        if self.path != "/":
-            self.send_error(HTTPStatus.NOT_FOUND, "Not Found")
-            return
-        html = build_html(self.products).encode("utf-8")
-        self.send_response(HTTPStatus.OK)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(html)))
-        self.end_headers()
-        self.wfile.write(html)
+        tk.Button(btn_frame, text="重新选择产物", command=self._show_product_dialog).pack(side=tk.LEFT)
+        tk.Button(btn_frame, text="确认并计算", command=self._run_decompose).pack(side=tk.RIGHT)
 
-    def do_POST(self) -> None:  # noqa: N802
-        if self.path != "/api/decompose":
-            self.send_error(HTTPStatus.NOT_FOUND, "Not Found")
+        self.result_text = tk.Text(frame, height=12, wrap=tk.WORD)
+        self.result_text.pack(fill=tk.BOTH, expand=False)
+        self.result_text.configure(state=tk.DISABLED)
+
+    def _show_product_dialog(self) -> None:
+        dialog = tk.Toplevel(self.root)
+        dialog.title("输入产物与所需数量")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        dialog.geometry("480x420")
+
+        tk.Label(dialog, text="输入产物名称（支持字符联想）").pack(anchor="w", padx=12, pady=(12, 4))
+        product_entry = tk.Entry(dialog)
+        product_entry.pack(fill=tk.X, padx=12)
+        product_entry.insert(0, self.product_name)
+
+        tk.Label(dialog, text="联想结果：").pack(anchor="w", padx=12, pady=(10, 4))
+        suggestion_list = tk.Listbox(dialog, height=12)
+        suggestion_list.pack(fill=tk.BOTH, expand=True, padx=12)
+
+        tk.Label(dialog, text="所需生产数量：").pack(anchor="w", padx=12, pady=(10, 4))
+        quantity_var = tk.StringVar(value=str(self.required_quantity))
+        quantity_entry = tk.Entry(dialog, textvariable=quantity_var)
+        quantity_entry.pack(fill=tk.X, padx=12)
+
+        def refresh_suggestions(*_: object) -> None:
+            keyword = product_entry.get().strip().lower()
+            suggestion_list.delete(0, tk.END)
+            matches = [p for p in self.products if keyword in p.lower()] if keyword else self.products[:]
+            for name in matches[:200]:
+                suggestion_list.insert(tk.END, name)
+
+        def select_current(_: object | None = None) -> None:
+            selection = suggestion_list.curselection()
+            if not selection:
+                return
+            selected_name = suggestion_list.get(selection[0])
+            product_entry.delete(0, tk.END)
+            product_entry.insert(0, selected_name)
+
+        def confirm() -> None:
+            name = product_entry.get().strip()
+            if not name:
+                messagebox.showerror("错误", "请先输入产物名称")
+                return
+            if name not in self.products:
+                messagebox.showerror("错误", "产物不存在，请从联想列表选择或检查拼写")
+                return
+
+            try:
+                qty = int(quantity_var.get().strip())
+            except ValueError:
+                messagebox.showerror("错误", "数量必须是正整数")
+                return
+            if qty < 1:
+                messagebox.showerror("错误", "数量必须 >= 1")
+                return
+
+            self.product_name = name
+            self.required_quantity = qty
+            self._set_result(f"已选择产物: {name}\n需求数量: {qty}\n请粘贴库存后点击“确认并计算”。")
+            dialog.destroy()
+
+        product_entry.bind("<KeyRelease>", refresh_suggestions)
+        suggestion_list.bind("<Double-Button-1>", select_current)
+        suggestion_list.bind("<<ListboxSelect>>", select_current)
+
+        tk.Button(dialog, text="确认", command=confirm).pack(padx=12, pady=12, fill=tk.X)
+        refresh_suggestions()
+
+    def _set_result(self, content: str) -> None:
+        self.result_text.configure(state=tk.NORMAL)
+        self.result_text.delete("1.0", tk.END)
+        self.result_text.insert(tk.END, content)
+        self.result_text.configure(state=tk.DISABLED)
+
+    def _run_decompose(self) -> None:
+        if not self.product_name:
+            messagebox.showerror("错误", "请先选择产物和数量")
             return
 
-        length = int(self.headers.get("Content-Length", "0"))
-        raw = self.rfile.read(length)
+        pasted_inventory = self.materials_text.get("1.0", tk.END)
         try:
-            payload = json.loads(raw.decode("utf-8"))
-            product_name = str(payload.get("productName", "")).strip()
-            quantity = int(payload.get("quantity", 1))
-            materials = str(payload.get("materials", ""))
-            if not product_name:
-                raise ValueError("productName 不能为空")
-            if quantity < 1:
-                raise ValueError("quantity 必须 >= 1")
-            result = compute_asteroid_breakdown(product_name, quantity, materials, self.refinery_file)
-            self._send_json(result)
+            result = compute_asteroids(
+                product_name=self.product_name,
+                required_quantity=self.required_quantity,
+                pasted_inventory_text=pasted_inventory,
+                refinery_file=self.refinery_file,
+            )
         except Exception as exc:
-            self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            messagebox.showerror("计算失败", str(exc))
+            return
+
+        lines = [
+            f"产物: {result['requested_product']}",
+            f"需求数量: {result['requested_quantity']}",
+            f"执行次数: {result['planned_runs']} (单次产出 {result['single_run_output']}，实际产出 {result['actual_output']})",
+            "",
+            "Asteroid 名称及个数:",
+        ]
+
+        if not result["asteroids"]:
+            lines.append("(无)")
+        else:
+            for name, qty in result["asteroids"]:
+                lines.append(f"- {name}: {qty}")
+
+        self._set_result("\n".join(lines))
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="启动交互式产物分解页面")
-    parser.add_argument("--host", default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=8765)
+    parser = argparse.ArgumentParser(description="启动 Tkinter 交互式产物分解界面")
     parser.add_argument("--refinery", default="refinery.json", help="Refinery 文件名，默认 refinery.json")
     args = parser.parse_args()
 
-    name_map, category_map = load_types_maps()
-    Handler.products = collect_product_names(name_map, category_map)
-    Handler.refinery_file = args.refinery
-
-    server = ThreadingHTTPServer((args.host, args.port), Handler)
-    print(f"UI 已启动: http://{args.host}:{args.port}")
-    server.serve_forever()
+    root = tk.Tk()
+    App(root, refinery_file=args.refinery)
+    root.mainloop()
 
 
 if __name__ == "__main__":
