@@ -153,7 +153,10 @@ def compute_asteroids(product_name: str, required_quantity: int, inventory_text:
 
     recipes = load_recipes(refinery_file, category_map)
     producible = {out_type for recipe in recipes for out_type, _ in recipe.outputs}
-    end_state, _ = solve_integer_program(initial_state, inventory, recipes, category_map, overproduce_buffer=1)
+    preferred_sources = {"field_printer.json"} if refinery_file == "field_refinery.json" else None
+    end_state, _ = solve_integer_program(
+        initial_state, inventory, recipes, category_map, overproduce_buffer=1, preferred_recipe_sources=preferred_sources
+    )
 
     asteroids = [
         (name_map.get(type_id, ""), quantity)

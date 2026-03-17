@@ -177,6 +177,7 @@ def solve_integer_program(
     recipes: list[Recipe],
     category_map: dict[int, str],
     overproduce_buffer: int,
+    preferred_recipe_sources: set[str] | None = None,
 ) -> tuple[dict[int, int], list[BranchChoice]]:
     output_to_recipes: dict[int, list[int]] = {}
     producible_non_asteroid: set[int] = set()
@@ -185,6 +186,8 @@ def solve_integer_program(
             output_to_recipes.setdefault(type_id, []).append(idx)
             if category_map.get(type_id, "") != "Asteroid":
                 producible_non_asteroid.add(type_id)
+
+    preferred_sources = preferred_recipe_sources or set()
 
     def consume_inventory_once(state: dict[int, int], inventory: dict[int, int], type_id: int) -> tuple[dict[int, int], dict[int, int]]:
         demand = state.get(type_id, 0)
@@ -217,7 +220,7 @@ def solve_integer_program(
     def solve(
         state_key: tuple[tuple[int, int], ...],
         inventory_key: tuple[tuple[int, int], ...],
-    ) -> tuple[tuple[int, int, int], tuple[BranchChoice, ...], tuple[tuple[int, int], ...], tuple[tuple[int, int], ...]]:
+    ) -> tuple[tuple[int, int, int, int], tuple[BranchChoice, ...], tuple[tuple[int, int], ...], tuple[tuple[int, int], ...]]:
         state = dict(state_key)
         inventory = dict(inventory_key)
 
@@ -231,14 +234,20 @@ def solve_integer_program(
             state, inventory = consume_terminal_inventory(state, inventory)
             asteroid_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") == "Asteroid")
             skipped_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") != "Asteroid" and t not in producible_non_asteroid)
-            return (asteroid_total, skipped_total, 0), tuple(), state_to_key(state), state_to_key(inventory)
+            return (asteroid_total, skipped_total, 0, 0), tuple(), state_to_key(state), state_to_key(inventory)
 
-        best_obj: tuple[int, int, int] | None = None
+        best_obj: tuple[int, int, int, int] | None = None
         best_plan: tuple[BranchChoice, ...] = tuple()
         best_end_state = state_key
         best_end_inventory = inventory_key
 
-        for recipe_idx in output_to_recipes.get(next_item, []):
+        candidate_recipe_indices = output_to_recipes.get(next_item, [])
+        if preferred_sources:
+            preferred_candidates = [idx for idx in candidate_recipe_indices if recipes[idx].source in preferred_sources]
+            if preferred_candidates:
+                candidate_recipe_indices = preferred_candidates
+
+        for recipe_idx in candidate_recipe_indices:
             recipe = recipes[recipe_idx]
             out_qty = next((qty for t, qty in recipe.outputs if t == next_item), 0)
             if out_qty <= 0:
@@ -251,7 +260,8 @@ def solve_integer_program(
             for runs in range(min_runs, max_runs + 1):
                 child_state = apply_choice(state, recipe, runs)
                 child_obj, child_plan, child_end_state, child_end_inventory = solve(state_to_key(child_state), state_to_key(inventory))
-                current_obj = (child_obj[0], child_obj[1], child_obj[2] + runs)
+                non_preferred_runs = 0 if not preferred_sources or recipe.source in preferred_sources else runs
+                current_obj = (child_obj[0], child_obj[1], child_obj[2] + non_preferred_runs, child_obj[3] + runs)
                 if best_obj is None or current_obj < best_obj:
                     best_obj = current_obj
                     best_plan = (BranchChoice(recipe_idx, runs),) + child_plan
@@ -263,7 +273,7 @@ def solve_integer_program(
             state, inventory = consume_terminal_inventory(state, inventory)
             asteroid_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") == "Asteroid")
             skipped_total = sum(q for t, q in state.items() if q > 0 and category_map.get(t, "") != "Asteroid" and t not in producible_non_asteroid)
-            return (asteroid_total, skipped_total, 0), tuple(), state_to_key(state), state_to_key(inventory)
+            return (asteroid_total, skipped_total, 0, 0), tuple(), state_to_key(state), state_to_key(inventory)
 
         return best_obj, best_plan, best_end_state, best_end_inventory
 
@@ -314,7 +324,10 @@ def main() -> None:
         type_id = int(enriched["typeID"])
         initial_state[type_id] = initial_state.get(type_id, 0) + int(enriched["quantity"])
 
-    end_state, plan = solve_integer_program(initial_state, inventory, recipes, category_map, max(0, args.overproduce_buffer))
+    preferred_sources = {"field_printer.json"} if args.refinery == "field_refinery.json" else None
+    end_state, plan = solve_integer_program(
+        initial_state, inventory, recipes, category_map, max(0, args.overproduce_buffer), preferred_recipe_sources=preferred_sources
+    )
 
     asteroid_totals = {t: q for t, q in end_state.items() if q > 0 and category_map.get(t, "") == "Asteroid"}
     skipped_totals = {
