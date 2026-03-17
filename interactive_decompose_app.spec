@@ -2,7 +2,10 @@
 
 from pathlib import Path
 
-project_root = Path(__file__).resolve().parent
+# NOTE:
+# In PyInstaller's spec execution context, __file__ may be undefined.
+# Use provided SPEC variable when available.
+project_root = Path(SPEC).resolve().parent if 'SPEC' in globals() else Path.cwd()
 
 
 a = Analysis(

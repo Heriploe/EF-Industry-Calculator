@@ -40,6 +40,8 @@ python3 interactive_decompose_app.py
 
 ## 打包可执行文件
 
+请在**非管理员终端**运行 PyInstaller（官方已提示管理员运行将被后续版本禁止）。
+
 已提供打包脚本 `build_interactive_decompose_app.sh`，会自动检查并安装 PyInstaller，然后输出可执行文件。
 
 ```bash
@@ -56,3 +58,5 @@ python3 interactive_decompose_app.py
 ```bash
 python3 -m PyInstaller interactive_decompose_app.spec
 ```
+
+说明：`interactive_decompose_app.spec` 已兼容 PyInstaller 执行环境中 `__file__` 不存在的情况。
