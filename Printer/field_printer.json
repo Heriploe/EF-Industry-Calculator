@@ -1,0 +1,77 @@
+[
+  {
+    "blueprintID": 1000,
+    "primaryTypeID": 88561,
+    "primaryTypeName": "Thermal Composites",
+    "runTime": 4,
+    "inputs": [
+      {
+        "quantity": 140,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue"
+      },
+      {
+        "quantity": 90,
+        "typeID": 89259,
+        "name": "Silica Grains"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 14,
+        "typeID": 88561,
+        "name": "Thermal Composites"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1003,
+    "primaryTypeID": 84210,
+    "primaryTypeName": "Carbon Weave",
+    "runTime": 5,
+    "inputs": [
+      {
+        "quantity": 350,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 14,
+        "typeID": 84210,
+        "name": "Carbon Weave"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1004,
+    "primaryTypeID": 84182,
+    "primaryTypeName": "Reinforced Alloys",
+    "runTime": 4,
+    "inputs": [
+      {
+        "quantity": 105,
+        "typeID": 89259,
+        "name": "Silica Grains"
+      },
+      {
+        "quantity": 70,
+        "typeID": 89260,
+        "name": "Iron-Rich Nodules"
+      },
+      {
+        "quantity": 70,
+        "typeID": 99001,
+        "name": "Palladium"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 8,
+        "typeID": 84182,
+        "name": "Reinforced Alloys"
+      }
+    ]
+  }
+]

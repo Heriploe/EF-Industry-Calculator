@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parent
 PRODUCT_DIR = ROOT / "Product"
 BLUEPRINTS_PATH = ROOT / "industry_blueprints.json"
 TYPES_PATH = ROOT / "types.json"
-OUTPUT_PATH = PRODUCT_DIR / "material_blueprints.json"
+OUTPUT_PATH = "material_blueprints.json"
 
 
 def load_json(path: Path) -> Any:
