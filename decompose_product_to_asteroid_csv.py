@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""按产物名称递归分解至 Asteroid，并导出 CSV。"""
+"""按产物名称递归分解至 Asteroid，并导出 CSV（不可分解原料会跳过）。"""
 
 from __future__ import annotations
 
@@ -118,6 +118,7 @@ def decompose_to_asteroid(
     item: dict[str, Any],
     recipes: dict[int, tuple[dict[str, Any], dict[str, Any]]],
     accum: dict[int, Fraction],
+    skipped: dict[int, Fraction],
     name_map: dict[int, str],
     category_map: dict[int, str],
     stack: set[int],
@@ -132,9 +133,8 @@ def decompose_to_asteroid(
 
     recipe_entry = recipes.get(type_id)
     if recipe_entry is None:
-        raise DecomposeError(
-            f"物料 {item.get('name') or name_map.get(type_id, type_id)}({type_id}) 不是 Asteroid，且未在 Printer/Refinery 中找到可分解蓝图"
-        )
+        skipped[type_id] += quantity
+        return
 
     if type_id in stack:
         raise DecomposeError(f"检测到循环分解：{type_id}")
@@ -150,7 +150,7 @@ def decompose_to_asteroid(
         for input_item in blueprint["inputs"]:
             next_item = dict(input_item)
             next_item["quantity"] = Fraction(int(input_item["quantity"])) * runs
-            decompose_to_asteroid(next_item, recipes, accum, name_map, category_map, stack)
+            decompose_to_asteroid(next_item, recipes, accum, skipped, name_map, category_map, stack)
     finally:
         stack.remove(type_id)
 
@@ -209,9 +209,10 @@ def main() -> None:
     recipes = build_recipe_index(args.refinery, name_map, category_map)
 
     asteroid_totals: dict[int, Fraction] = defaultdict(Fraction)
+    skipped_totals: dict[int, Fraction] = defaultdict(Fraction)
     for input_item in target_blueprint.get("inputs", []):
         enriched = fill_item_meta(input_item, name_map, category_map)
-        decompose_to_asteroid(enriched, recipes, asteroid_totals, name_map, category_map, set())
+        decompose_to_asteroid(enriched, recipes, asteroid_totals, skipped_totals, name_map, category_map, set())
 
     output_path = Path(args.output) if args.output else ROOT / f"{normalize_filename(args.product_name)}_asteroid_breakdown.csv"
     write_csv(output_path, args.product_name, int(target_output.get("quantity", 1)), asteroid_totals, name_map)
@@ -219,6 +220,10 @@ def main() -> None:
     print(f"已从 {product_path.name} 找到产物：{args.product_name}")
     print(f"使用 Refinery：{args.refinery}")
     print(f"已导出分解结果：{output_path}")
+    if skipped_totals:
+        print("以下原料无法在指定 Refinery + Printer 中继续分解，已跳过：")
+        for type_id, qty in sorted(skipped_totals.items(), key=lambda x: (name_map.get(x[0], ""), x[0])):
+            print(f"- {name_map.get(type_id, '')}({type_id}): {fraction_to_str(qty)}")
 
 
 if __name__ == "__main__":
