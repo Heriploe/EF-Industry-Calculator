@@ -1,0 +1,170 @@
+[
+  {
+    "blueprintID": 1222,
+    "primaryTypeID": 77811,
+    "primaryTypeName": "Hydrated Sulfide Matrix",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 4,
+    "inputs": [
+      {
+        "quantity": 120,
+        "typeID": 77811,
+        "name": "Hydrated Sulfide Matrix",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 60,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 600,
+        "typeID": 78423,
+        "name": "Water Ice",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1221,
+    "primaryTypeID": 77810,
+    "primaryTypeName": "Platinum-Palladium Matrix",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 4,
+    "inputs": [
+      {
+        "quantity": 120,
+        "typeID": 77810,
+        "name": "Platinum-Palladium Matrix",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 30,
+        "typeID": 89259,
+        "name": "Silica Grains",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 90,
+        "typeID": 89260,
+        "name": "Iron-Rich Nodules",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 24,
+        "typeID": 99001,
+        "name": "Palladium",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1220,
+    "primaryTypeID": 77800,
+    "primaryTypeName": "Feldspar Crystals",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 4,
+    "inputs": [
+      {
+        "quantity": 120,
+        "typeID": 77800,
+        "name": "Feldspar Crystals",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 30,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 90,
+        "typeID": 89259,
+        "name": "Silica Grains",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1212,
+    "primaryTypeID": 89260,
+    "primaryTypeName": "Iron-Rich Nodules",
+    "runTime": 25,
+    "inputs": [
+      {
+        "quantity": 60,
+        "typeID": 89260,
+        "name": "Iron-Rich Nodules"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 60,
+        "typeID": 77805,
+        "name": "Platinum-Group Veins "
+      },
+      {
+        "quantity": 594,
+        "typeID": 77801,
+        "name": "Nickel-Iron Veins"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1209,
+    "primaryTypeID": 89259,
+    "primaryTypeName": "Silica Grains",
+    "runTime": 25,
+    "inputs": [
+      {
+        "quantity": 60,
+        "typeID": 89259,
+        "name": "Silica Grains"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 150,
+        "typeID": 88235,
+        "name": "Feldspar Crystal Shards"
+      },
+      {
+        "quantity": 450,
+        "typeID": 77803,
+        "name": "Silicon Dust"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1205,
+    "primaryTypeID": 89258,
+    "primaryTypeName": "Hydrocarbon Residue",
+    "runTime": 25,
+    "inputs": [
+      {
+        "quantity": 60,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 60,
+        "typeID": 88234,
+        "name": "Troilite Sulfide Grains"
+      },
+      {
+        "quantity": 540,
+        "typeID": 77804,
+        "name": "Tholin Aggregates"
+      }
+    ]
+  }
+]
