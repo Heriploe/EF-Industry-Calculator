@@ -1,0 +1,653 @@
+[
+  {
+    "blueprintID": 1182,
+    "primaryTypeID": 77800,
+    "primaryTypeName": "Feldspar Crystals",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 3,
+    "inputs": [
+      {
+        "quantity": 20,
+        "typeID": 77800,
+        "name": "Feldspar Crystals",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 5,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 15,
+        "typeID": 89259,
+        "name": "Silica Grains",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1183,
+    "primaryTypeID": 77811,
+    "primaryTypeName": "Hydrated Sulfide Matrix",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 3,
+    "inputs": [
+      {
+        "quantity": 20,
+        "typeID": 77811,
+        "name": "Hydrated Sulfide Matrix",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 10,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 150,
+        "typeID": 78423,
+        "name": "Water Ice",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1184,
+    "primaryTypeID": 77810,
+    "primaryTypeName": "Platinum-Palladium Matrix",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 3,
+    "inputs": [
+      {
+        "quantity": 20,
+        "typeID": 77810,
+        "name": "Platinum-Palladium Matrix",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 8,
+        "typeID": 89259,
+        "name": "Silica Grains",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 15,
+        "typeID": 89260,
+        "name": "Iron-Rich Nodules",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 4,
+        "typeID": 99001,
+        "name": "Palladium",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1195,
+    "primaryTypeID": 77729,
+    "primaryTypeName": "Rough Old Crude Matter",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 20,
+    "inputs": [
+      {
+        "quantity": 30,
+        "typeID": 77729,
+        "name": "Rough Old Crude Matter",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 16,
+        "typeID": 83839,
+        "name": "Salt",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 28,
+        "typeID": 77728,
+        "name": "Sophrogon",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1196,
+    "primaryTypeID": 78434,
+    "primaryTypeName": "Rough Young Crude Matter",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 20,
+    "inputs": [
+      {
+        "quantity": 30,
+        "typeID": 78434,
+        "name": "Rough Young Crude Matter",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 83839,
+        "name": "Salt",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 28,
+        "typeID": 78435,
+        "name": "Eupraxite",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1197,
+    "primaryTypeID": 78446,
+    "primaryTypeName": "Methane Ice Shards",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 15,
+    "inputs": [
+      {
+        "quantity": 100,
+        "typeID": 78446,
+        "name": "Methane Ice Shards",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 88781,
+        "name": "Chitinous Organics",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 126,
+        "typeID": 77804,
+        "name": "Tholin Aggregates",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 349,
+        "typeID": 78423,
+        "name": "Water Ice",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1198,
+    "primaryTypeID": 78447,
+    "primaryTypeName": "Primitive Kerogen Matrix",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 15,
+    "inputs": [
+      {
+        "quantity": 100,
+        "typeID": 78447,
+        "name": "Primitive Kerogen Matrix",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 88781,
+        "name": "Chitinous Organics",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 16,
+        "typeID": 88783,
+        "name": "Kerogen Tar",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1199,
+    "primaryTypeID": 78448,
+    "primaryTypeName": "Solidifying Core Aestasium",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 15,
+    "inputs": [
+      {
+        "quantity": 100,
+        "typeID": 78448,
+        "name": "Solidifying Core Aestasium",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 88781,
+        "name": "Chitinous Organics",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 4,
+        "typeID": 88782,
+        "name": "Aromatic Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 8,
+        "typeID": 88783,
+        "name": "Kerogen Tar",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1200,
+    "primaryTypeID": 78449,
+    "primaryTypeName": "Tholin Nodules",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 15,
+    "inputs": [
+      {
+        "quantity": 100,
+        "typeID": 78449,
+        "name": "Tholin Nodules",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 88781,
+        "name": "Chitinous Organics",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 8,
+        "typeID": 88782,
+        "name": "Aromatic Carbon Weave",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1201,
+    "primaryTypeID": 77800,
+    "primaryTypeName": "Feldspar Crystals",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 3,
+    "inputs": [
+      {
+        "quantity": 40,
+        "typeID": 77800,
+        "name": "Feldspar Crystals",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 10,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 30,
+        "typeID": 89259,
+        "name": "Silica Grains",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1202,
+    "primaryTypeID": 77810,
+    "primaryTypeName": "Platinum-Palladium Matrix",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 3,
+    "inputs": [
+      {
+        "quantity": 40,
+        "typeID": 77810,
+        "name": "Platinum-Palladium Matrix",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 10,
+        "typeID": 89259,
+        "name": "Silica Grains",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 30,
+        "typeID": 89260,
+        "name": "Iron-Rich Nodules",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 8,
+        "typeID": 99001,
+        "name": "Palladium",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1203,
+    "primaryTypeID": 77811,
+    "primaryTypeName": "Hydrated Sulfide Matrix",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 3,
+    "inputs": [
+      {
+        "quantity": 40,
+        "typeID": 77811,
+        "name": "Hydrated Sulfide Matrix",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 20,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 200,
+        "typeID": 78423,
+        "name": "Water Ice",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1204,
+    "primaryTypeID": 78426,
+    "primaryTypeName": "Iridosmine Nodules",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 5,
+    "inputs": [
+      {
+        "quantity": 40,
+        "typeID": 78426,
+        "name": "Iridosmine Nodules",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 40,
+        "typeID": 89260,
+        "name": "Iron-Rich Nodules",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1220,
+    "primaryTypeID": 77800,
+    "primaryTypeName": "Feldspar Crystals",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 4,
+    "inputs": [
+      {
+        "quantity": 120,
+        "typeID": 77800,
+        "name": "Feldspar Crystals",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 30,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 90,
+        "typeID": 89259,
+        "name": "Silica Grains",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1221,
+    "primaryTypeID": 77810,
+    "primaryTypeName": "Platinum-Palladium Matrix",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 4,
+    "inputs": [
+      {
+        "quantity": 120,
+        "typeID": 77810,
+        "name": "Platinum-Palladium Matrix",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 30,
+        "typeID": 89259,
+        "name": "Silica Grains",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 90,
+        "typeID": 89260,
+        "name": "Iron-Rich Nodules",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 24,
+        "typeID": 99001,
+        "name": "Palladium",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1222,
+    "primaryTypeID": 77811,
+    "primaryTypeName": "Hydrated Sulfide Matrix",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 4,
+    "inputs": [
+      {
+        "quantity": 120,
+        "typeID": 77811,
+        "name": "Hydrated Sulfide Matrix",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 60,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 600,
+        "typeID": 78423,
+        "name": "Water Ice",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1223,
+    "primaryTypeID": 78426,
+    "primaryTypeName": "Iridosmine Nodules",
+    "primaryCategoryName": "Asteroid",
+    "runTime": 8,
+    "inputs": [
+      {
+        "quantity": 120,
+        "typeID": 78426,
+        "name": "Iridosmine Nodules",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 120,
+        "typeID": 89260,
+        "name": "Iron-Rich Nodules",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1062,
+    "primaryTypeID": 82132,
+    "primaryTypeName": "Rapid Plasma Ammo 1 (M)",
+    "primaryCategoryName": "Charge",
+    "runTime": 13,
+    "inputs": [
+      {
+        "quantity": 4,
+        "typeID": 84182,
+        "name": "Reinforced Alloys",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 800,
+        "typeID": 88234,
+        "name": "Troilite Sulfide Grains",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 1000,
+        "typeID": 77801,
+        "name": "Nickel-Iron Veins",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 400,
+        "typeID": 88234,
+        "name": "Troilite Sulfide Grains",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 700,
+        "typeID": 99001,
+        "name": "Palladium",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 100,
+        "typeID": 77811,
+        "name": "Hydrated Sulfide Matrix",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 100,
+        "typeID": 82132,
+        "name": "Rapid Plasma Ammo 1 (M)",
+        "categoryName": "Charge"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1480,
+    "primaryTypeID": 78435,
+    "primaryTypeName": "Eupraxite",
+    "primaryCategoryName": "Material",
+    "runTime": 20,
+    "inputs": [
+      {
+        "quantity": 30,
+        "typeID": 92394,
+        "name": "Fine Young Crude Matter",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 3,
+        "typeID": 78435,
+        "name": "Eupraxite",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 26,
+        "typeID": 92422,
+        "name": "Brine",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1481,
+    "primaryTypeID": 77728,
+    "primaryTypeName": "Sophrogon",
+    "primaryCategoryName": "Material",
+    "runTime": 20,
+    "inputs": [
+      {
+        "quantity": 30,
+        "typeID": 92414,
+        "name": "Fine Old Crude Matter",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 3,
+        "typeID": 77728,
+        "name": "Sophrogon",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 26,
+        "typeID": 92422,
+        "name": "Brine",
+        "categoryName": "Material"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1482,
+    "primaryTypeID": 92483,
+    "primaryTypeName": "Still Kernel",
+    "primaryCategoryName": "Material",
+    "runTime": 11,
+    "inputs": [
+      {
+        "quantity": 50,
+        "typeID": 92422,
+        "name": "Brine",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 5,
+        "typeID": 78449,
+        "name": "Tholin Nodules",
+        "categoryName": "Asteroid"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 92483,
+        "name": "Still Kernel",
+        "categoryName": "Material"
+      }
+    ]
+  }
+]

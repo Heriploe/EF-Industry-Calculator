@@ -1,0 +1,618 @@
+[
+  {
+    "blueprintID": 1009,
+    "primaryTypeID": 87847,
+    "primaryTypeName": "Reflex",
+    "primaryCategoryName": "Ship",
+    "runTime": 50,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 78418,
+        "name": "Nomad Program Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 28,
+        "typeID": 84182,
+        "name": "Reinforced Alloys",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 40,
+        "typeID": 89258,
+        "name": "Hydrocarbon Residue",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 87847,
+        "name": "Reflex",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1470,
+    "primaryTypeID": 91106,
+    "primaryTypeName": "Stride",
+    "primaryCategoryName": "Ship",
+    "runTime": 10630,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 89978,
+        "name": "",
+        "categoryName": ""
+      },
+      {
+        "quantity": 2,
+        "typeID": 78418,
+        "name": "Nomad Program Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 48,
+        "typeID": 84210,
+        "name": "Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 48,
+        "typeID": 88561,
+        "name": "Thermal Composites",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 96,
+        "typeID": 84182,
+        "name": "Reinforced Alloys",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 91106,
+        "name": "Stride",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1471,
+    "primaryTypeID": 91107,
+    "primaryTypeName": "Carom",
+    "primaryCategoryName": "Ship",
+    "runTime": 10260,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 89979,
+        "name": "",
+        "categoryName": ""
+      },
+      {
+        "quantity": 2,
+        "typeID": 78418,
+        "name": "Nomad Program Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 44,
+        "typeID": 84210,
+        "name": "Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 44,
+        "typeID": 88561,
+        "name": "Thermal Composites",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 88,
+        "typeID": 84182,
+        "name": "Reinforced Alloys",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 91107,
+        "name": "Carom",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1224,
+    "primaryTypeID": 87848,
+    "primaryTypeName": "Reiver",
+    "primaryCategoryName": "Ship",
+    "runTime": 150,
+    "inputs": [
+      {
+        "quantity": 2,
+        "typeID": 78418,
+        "name": "Nomad Program Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 33,
+        "typeID": 84210,
+        "name": "Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 33,
+        "typeID": 88561,
+        "name": "Thermal Composites",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 78,
+        "typeID": 84182,
+        "name": "Reinforced Alloys",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 87848,
+        "name": "Reiver",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1226,
+    "primaryTypeID": 87846,
+    "primaryTypeName": "Recurve",
+    "primaryCategoryName": "Ship",
+    "runTime": 130,
+    "inputs": [
+      {
+        "quantity": 2,
+        "typeID": 78418,
+        "name": "Nomad Program Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 25,
+        "typeID": 84210,
+        "name": "Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 25,
+        "typeID": 88561,
+        "name": "Thermal Composites",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 45,
+        "typeID": 84182,
+        "name": "Reinforced Alloys",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 2,
+        "typeID": 92483,
+        "name": "Still Kernel",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 87846,
+        "name": "Recurve",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1227,
+    "primaryTypeID": 87698,
+    "primaryTypeName": "Wend",
+    "primaryCategoryName": "Ship",
+    "runTime": 60,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 78418,
+        "name": "Nomad Program Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 34,
+        "typeID": 84182,
+        "name": "Reinforced Alloys",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 17,
+        "typeID": 84210,
+        "name": "Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 17,
+        "typeID": 88561,
+        "name": "Thermal Composites",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 87698,
+        "name": "Wend",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1228,
+    "primaryTypeID": 82426,
+    "primaryTypeName": "LORHA",
+    "primaryCategoryName": "Ship",
+    "runTime": 8320,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 78417,
+        "name": "Bastion Program Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 58,
+        "typeID": 84204,
+        "name": "Batched Reinforced Alloys",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 29,
+        "typeID": 88841,
+        "name": "Batched Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 29,
+        "typeID": 88843,
+        "name": "Batched Thermal Composites",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 82426,
+        "name": "LORHA",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1229,
+    "primaryTypeID": 81904,
+    "primaryTypeName": "MCF",
+    "primaryCategoryName": "Ship",
+    "runTime": 79200,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 78421,
+        "name": "Exterminata Protocol Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 88,
+        "typeID": 84204,
+        "name": "Batched Reinforced Alloys",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 48,
+        "typeID": 88841,
+        "name": "Batched Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 48,
+        "typeID": 88843,
+        "name": "Batched Thermal Composites",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 3,
+        "typeID": 92483,
+        "name": "Still Kernel",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 81904,
+        "name": "MCF",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1230,
+    "primaryTypeID": 81808,
+    "primaryTypeName": "TADES",
+    "primaryCategoryName": "Ship",
+    "runTime": 151200,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 78416,
+        "name": "Apocalypse Protocol Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 124,
+        "typeID": 84204,
+        "name": "Batched Reinforced Alloys",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 72,
+        "typeID": 88841,
+        "name": "Batched Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 72,
+        "typeID": 88843,
+        "name": "Batched Thermal Composites",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 4,
+        "typeID": 92483,
+        "name": "Still Kernel",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 81808,
+        "name": "TADES",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1231,
+    "primaryTypeID": 82424,
+    "primaryTypeName": "HAF",
+    "primaryCategoryName": "Ship",
+    "runTime": 82800,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 78421,
+        "name": "Exterminata Protocol Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 160,
+        "typeID": 84204,
+        "name": "Batched Reinforced Alloys",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 74,
+        "typeID": 88841,
+        "name": "Batched Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 74,
+        "typeID": 88843,
+        "name": "Batched Thermal Composites",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 82424,
+        "name": "HAF",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1232,
+    "primaryTypeID": 81609,
+    "primaryTypeName": "USV",
+    "primaryCategoryName": "Ship",
+    "runTime": 8200,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 78420,
+        "name": "Archangel Protocol Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 56,
+        "typeID": 84204,
+        "name": "Batched Reinforced Alloys",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 28,
+        "typeID": 88841,
+        "name": "Batched Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 28,
+        "typeID": 88843,
+        "name": "Batched Thermal Composites",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 81609,
+        "name": "USV",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1233,
+    "primaryTypeID": 82430,
+    "primaryTypeName": "MAUL",
+    "primaryCategoryName": "Ship",
+    "runTime": 244800,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 78416,
+        "name": "Apocalypse Protocol Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 46,
+        "typeID": 84206,
+        "name": "Packaged Reinforced Alloys",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 30,
+        "typeID": 88842,
+        "name": "Packaged Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 30,
+        "typeID": 88844,
+        "name": "Packaged Thermal Composites",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 7,
+        "typeID": 88780,
+        "name": "Echo Chamber",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 2,
+        "typeID": 88565,
+        "name": "Still Knot",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 82430,
+        "name": "MAUL",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1234,
+    "primaryTypeID": 81611,
+    "primaryTypeName": "Chumaq",
+    "primaryCategoryName": "Ship",
+    "runTime": 324000,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 78422,
+        "name": "Equilibrium Program Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 128,
+        "typeID": 88842,
+        "name": "Packaged Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 128,
+        "typeID": 88844,
+        "name": "Packaged Thermal Composites",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 256,
+        "typeID": 84206,
+        "name": "Packaged Reinforced Alloys",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 81611,
+        "name": "Chumaq",
+        "categoryName": "Ship"
+      }
+    ]
+  },
+  {
+    "blueprintID": 1483,
+    "primaryTypeID": 82425,
+    "primaryTypeName": "LAI",
+    "primaryCategoryName": "Ship",
+    "runTime": 78000,
+    "inputs": [
+      {
+        "quantity": 1,
+        "typeID": 78421,
+        "name": "Exterminata Protocol Frame",
+        "categoryName": "Commodity"
+      },
+      {
+        "quantity": 80,
+        "typeID": 84204,
+        "name": "Batched Reinforced Alloys",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 70,
+        "typeID": 88841,
+        "name": "Batched Carbon Weave",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 70,
+        "typeID": 88843,
+        "name": "Batched Thermal Composites",
+        "categoryName": "Material"
+      },
+      {
+        "quantity": 4,
+        "typeID": 92483,
+        "name": "Still Kernel",
+        "categoryName": "Material"
+      }
+    ],
+    "outputs": [
+      {
+        "quantity": 1,
+        "typeID": 82425,
+        "name": "LAI",
+        "categoryName": "Ship"
+      }
+    ]
+  }
+]
